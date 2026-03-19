@@ -1,0 +1,51 @@
+{
+     "version": "1.0.0",
+    "name": "alphasky/assets",
+    "description": "Laravel assets management",
+    "license": "MIT",
+    "keywords": [
+        "alphasky",
+        "alphasky cms",
+        "alphasky platform",
+        "alphasky assets"
+    ],
+    "homepage": "https://alphasky.org",
+    "authors": [
+        {
+            "name": "Bassam Alessawi",
+            "email": "bassam.alessawi@icloud.com"
+        }
+    ],
+    "require": {
+        "php": "^7.1.3|^8.0|^8.1|^8.2|^8.3",
+        "laravel/framework": "^5.6|^6|^7|^8|^9|^10|^11.0|^12.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^6.1|^7.0|^8.0|^9.0|^10.0|^11.0",
+        "mockery/mockery": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\Assets\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Alphasky\\Assets\\Tests\\": "tests"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\Assets\\Providers\\AssetsServiceProvider"
+            ],
+            "aliases": {
+                "Assets": "Alphasky\\Assets\\Facades\\AssetsFacade"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}

@@ -1,0 +1,44 @@
+<?php
+
+namespace {Module}\Providers;
+
+use Alphasky\Base\Facades\DashboardMenu;
+use Alphasky\Base\Supports\ServiceProvider;
+use Alphasky\Base\Traits\LoadAndPublishDataTrait;
+use {Module}\Models\{Name};
+use Alphasky\LanguageAdvanced\Supports\LanguageAdvancedManager;
+
+class {Name}ServiceProvider extends ServiceProvider
+{
+    use LoadAndPublishDataTrait;
+
+    public function boot(): void
+    {
+        $this
+            ->setNamespace('{types}/{-name}')
+            ->loadHelpers()
+            ->loadAndPublishConfigurations(['permissions'])
+            ->loadMigrations()
+            ->loadAndPublishTranslations()
+            ->loadAndPublishViews()
+            ->loadRoutes();
+
+        if (defined('LANGUAGE_ADVANCED_MODULE_SCREEN_NAME')) {
+            LanguageAdvancedManager::registerModule({Name}::class, [
+                'name',
+            ]);
+        }
+
+        DashboardMenu::default()->beforeRetrieving(function () {
+            DashboardMenu::registerItem([
+                'id' => 'cms-{types}-{-name}',
+                'priority' => 5,
+                'parent_id' => null,
+                'name' => '{types}/{-name}::{-name}.name',
+                'icon' => 'ti ti-box',
+                'url' => route('{-name}.index'),
+                'permissions' => ['{-name}.index'],
+            ]);
+        });
+    }
+}

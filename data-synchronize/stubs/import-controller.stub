@@ -1,0 +1,15 @@
+<?php
+
+namespace {{ namespace }};
+
+use Alphasky\DataSynchronize\Http\Controllers\ImportController;
+use Alphasky\DataSynchronize\Importer\Importer;
+use {{ importerNamespace }};
+
+class {{ class }} extends ImportController
+{
+    protected function getImporter(): Importer
+    {
+        return {{ importer }}::make();
+    }
+}

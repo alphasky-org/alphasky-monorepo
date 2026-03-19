@@ -1,0 +1,24 @@
+{
+    "version": "1.0.0",
+    "name": "alphasky/slug",
+    "description": "Slug/Permalink",
+    "type": "package",
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\Slug\\": "src"
+        }
+    },
+    "require": {
+        "alphasky/platform": "1.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\Slug\\Providers\\SlugServiceProvider"
+            ],
+            "aliases": {
+                "SlugHelper": "Alphasky\\Slug\\Facades\\SlugHelper"
+            }
+        }
+    }
+}

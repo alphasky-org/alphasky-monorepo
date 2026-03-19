@@ -1,0 +1,19 @@
+{
+    "name": "alphasky/{-name}",
+    "description": "{Name} package",
+    "type": "package",
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\{Name}\\": "src"
+        }
+    },
+    "require": {
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\{Name}\\Providers\\{Name}ServiceProvider"
+            ]
+        }
+    }
+}

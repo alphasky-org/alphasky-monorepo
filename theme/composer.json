@@ -1,0 +1,33 @@
+{
+    "version": "1.0.0",
+    "name": "alphasky/theme",
+    "description": "Theme package",
+    "type": "package",
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\Theme\\": "src"
+        }
+    },
+    "require": {
+        "alphasky/platform": "1.0.0",
+        "alphasky/sitemap": "1.0.0",
+        "alphasky/widget": "1.0.0",
+        "alphasky/slug": "1.0.0",
+        "alphasky/seo-helper": "1.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\Theme\\Providers\\ThemeServiceProvider",
+                "Alphasky\\Theme\\Providers\\RouteServiceProvider"
+            ],
+            "aliases": {
+                "Theme": "Alphasky\\Theme\\Facades\\Theme",
+                "ThemeOption": "Alphasky\\Theme\\Facades\\ThemeOption",
+                "ThemeManager": "Alphasky\\Theme\\Facades\\Manager",
+                "AdminBar": "Alphasky\\Theme\\Facades\\AdminBar",
+                "SiteMapManager": "Alphasky\\Theme\\Facades\\SiteMapManager"
+            }
+        }
+    }
+}

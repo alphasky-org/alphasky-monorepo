@@ -1,0 +1,54 @@
+<?php
+
+namespace {Module}\Tables;
+
+use {Module}\Models\{Name};
+use Alphasky\Table\Abstracts\TableAbstract;
+use Alphasky\Table\Actions\DeleteAction;
+use Alphasky\Table\Actions\EditAction;
+use Alphasky\Table\BulkActions\DeleteBulkAction;
+use Alphasky\Table\BulkChanges\CreatedAtBulkChange;
+use Alphasky\Table\BulkChanges\NameBulkChange;
+use Alphasky\Table\BulkChanges\StatusBulkChange;
+use Alphasky\Table\Columns\CreatedAtColumn;
+use Alphasky\Table\Columns\IdColumn;
+use Alphasky\Table\Columns\NameColumn;
+use Alphasky\Table\Columns\StatusColumn;
+use Alphasky\Table\HeaderActions\CreateHeaderAction;
+use Illuminate\Database\Eloquent\Builder;
+
+class {Name}Table extends TableAbstract
+{
+    public function setup(): void
+    {
+        $this
+            ->model({Name}::class)
+            ->addHeaderAction(CreateHeaderAction::make()->route('{-name}.create'))
+            ->addActions([
+                EditAction::make()->route('{-name}.edit'),
+                DeleteAction::make()->route('{-name}.destroy'),
+            ])
+            ->addColumns([
+                IdColumn::make(),
+                NameColumn::make()->route('{-name}.edit'),
+                CreatedAtColumn::make(),
+                StatusColumn::make(),
+            ])
+            ->addBulkActions([
+                DeleteBulkAction::make()->permission('{-name}.destroy'),
+            ])
+            ->addBulkChanges([
+                NameBulkChange::make(),
+                StatusBulkChange::make(),
+                CreatedAtBulkChange::make(),
+            ])
+            ->queryUsing(function (Builder $query) {
+                $query->select([
+                    'id',
+                    'name',
+                    'created_at',
+                    'status',
+                ]);
+            });
+    }
+}

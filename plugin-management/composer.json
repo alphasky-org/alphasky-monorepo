@@ -1,0 +1,21 @@
+{
+     "version": "1.0.0",
+    "name": "alphasky/plugin-management",
+    "description": "Plugin management package",
+    "type": "package",
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\PluginManagement\\": "src"
+        }
+    },
+    "require": {
+        "alphasky/platform": "1.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\PluginManagement\\Providers\\PluginManagementServiceProvider"
+            ]
+        }
+    }
+}

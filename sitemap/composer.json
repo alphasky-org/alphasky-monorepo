@@ -1,0 +1,23 @@
+{
+	"version": "1.0.0",
+	"name": "alphasky/sitemap",
+	"description": "Sitemap package for Laravel.",
+	"license": "MIT",
+	"require": {
+		"alphasky/platform": "1.0.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"Alphasky\\Sitemap\\": "src"
+		}
+	},
+	"extra": {
+		"laravel": {
+			"providers": [
+				"Alphasky\\Sitemap\\Providers\\SitemapServiceProvider"
+			]
+		}
+	},
+	"minimum-stability": "stable",
+	"prefer-stable": true
+}

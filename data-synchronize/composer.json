@@ -1,0 +1,25 @@
+{
+        "version": "1.0.0",
+        
+    "name": "alphasky/data-synchronize",
+    "description": "Make site ready in few steps",
+    "type": "alphasky-package",
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\DataSynchronize\\": "src/"
+        }
+    },
+    "require": {
+        "alphasky/platform": "1.0.0",
+        "maatwebsite/excel": "^3.1",
+        "spatie/simple-excel": "^3.6"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\DataSynchronize\\Providers\\DataSynchronizeServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable"
+}

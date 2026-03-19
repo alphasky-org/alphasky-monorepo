@@ -1,0 +1,26 @@
+{
+    "version": "1.0.0",
+    "name": "alphasky/widget",
+    "description": "Widget package",
+    "type": "package",
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\Widget\\": "src"
+        }
+    },
+    "require": {
+        "alphasky/platform": "1.0.0",
+        "alphasky/theme": "1.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\Widget\\Providers\\WidgetServiceProvider"
+            ],
+            "aliases": {
+                "Widget": "Alphasky\\Widget\\Facades\\Widget",
+                "WidgetGroup": "Alphasky\\Widget\\Facades\\WidgetGroup"
+            }
+        }
+    }
+}

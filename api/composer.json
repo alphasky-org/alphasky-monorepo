@@ -1,0 +1,47 @@
+{
+        "version": "1.0.0",
+    "name": "alphasky/api",
+    "description": "API package for Alphasky CMS",
+    "type": "package",
+    "license": "MIT",
+    "keywords": [
+        "alphasky",
+        "alphasky cms",
+        "alphasky platform",
+        "alphasky api"
+    ],
+    "homepage": "https://alphasky.org",
+    "authors": [
+        {
+            "name": "Alphasky Technologies",
+            "email": "contact@alphasky.org"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\Api\\": "src"
+        }
+    },
+    "require": {
+        "google/auth": "^1.28"
+    },
+    "require-dev": {
+        "knuckleswtf/scribe": "^5.0",
+        "laravel/pint": "^1.5.0",
+        "phpunit/phpunit": "^9.0|^10.0|^11.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\Api\\Providers\\ApiServiceProvider"
+            ],
+            "aliases": {
+                "ApiHelper": "Alphasky\\Api\\Facades\\ApiHelper"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}

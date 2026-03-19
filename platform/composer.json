@@ -1,0 +1,103 @@
+{
+    "version": "1.0.0",
+    "name": "alphasky/platform",
+    "description": "The Alphasky Platform based on Laravel Framework.",
+    "keywords": [
+        "alphasky",
+        "alphasky cms",
+        "alphasky platform"
+    ],
+    "homepage": "https://alphasky.org",
+    "support": {
+        "issues": "https://alphasky.ticksy.com",
+        "document": "https://docs.alphasky.org"
+    },
+    "authors": [
+        {
+            "name": "Alphasky Technologies",
+            "email": "contact@alphasky.org"
+        }
+    ],
+    "type": "project",
+    "require": {
+        "ext-gd": "*",
+        "ext-zip": "*",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "alphasky/assets": "*",
+        "alphasky/form-builder": "*",
+        "intervention/image": "^3.4",
+        "league/flysystem-aws-s3-v3": "^3.0",
+        "maatwebsite/excel": "^3.1",
+        "maennchen/zipstream-php": "3.1.*",
+        "mews/purifier": "^3.3",
+        "mobiledetect/mobiledetectlib": "^4.8",
+        "mpdf/mpdf": "^8.2",
+        "resend/resend-php": "*",
+        "symfony/http-client": "^7.2",
+        "symfony/mailgun-mailer": "^7.2",
+        "symfony/postmark-mailer": "^7.2",
+        "tightenco/ziggy": "^2.0",
+        "twig/twig": "^3.14",
+        "yajra/laravel-datatables-buttons": "^12.0",
+        "yajra/laravel-datatables-oracle": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\Support\\": "support/src",
+            "Alphasky\\ACL\\": "acl/src",
+            "Alphasky\\Base\\": "base/src",
+            "Alphasky\\Base\\Tests\\": "base/tests",
+            "Alphasky\\Dashboard\\": "dashboard/src",
+            "Alphasky\\Media\\": "media/src",
+            "Alphasky\\Setting\\": "setting/src",
+            "Alphasky\\Table\\": "table/src",
+            "Alphasky\\JsValidation\\": "js-validation/src",
+            "Alphasky\\Chart\\": "chart/src",
+            "Alphasky\\Icon\\": "icon/src",
+            "Tightenco\\Ziggy\\": "base/src/Ziggy"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\Base\\Providers\\BaseServiceProvider",
+                "Alphasky\\Base\\Providers\\CommandServiceProvider",
+                "Alphasky\\Base\\Providers\\EventServiceProvider",
+                "Alphasky\\Base\\Providers\\ComposerServiceProvider",
+                "Alphasky\\Base\\Providers\\MailConfigServiceProvider",
+                "Alphasky\\Base\\Providers\\FormServiceProvider",
+                "Alphasky\\Support\\Providers\\SupportServiceProvider",
+                "Alphasky\\Table\\Providers\\TableServiceProvider",
+                "Alphasky\\ACL\\Providers\\AclServiceProvider",
+                "Alphasky\\Dashboard\\Providers\\DashboardServiceProvider",
+                "Alphasky\\Media\\Providers\\MediaServiceProvider",
+                "Alphasky\\JsValidation\\Providers\\JsValidationServiceProvider",
+                "Alphasky\\Chart\\Providers\\ChartServiceProvider",
+                "Alphasky\\Icon\\Providers\\IconServiceProvider"
+            ],
+            "aliases": {
+                "Action": "Alphasky\\Base\\Facades\\Action",
+                "AdminAppearance": "Alphasky\\Base\\Facades\\AdminAppearance",
+                "AdminHelper": "Alphasky\\Base\\Facades\\AdminHelper",
+                "Assets": "Alphasky\\Base\\Facades\\Assets",
+                "BaseHelper": "Alphasky\\Base\\Facades\\BaseHelper",
+                "Breadcrumbs": "Alphasky\\Base\\Facades\\Breadcrumbs",
+                "DashboardMenu": "Alphasky\\Base\\Facades\\DashboardMenu",
+                "CoreIcon": "Alphasky\\Icon\\Facades\\Icon",
+                "EmailHandler": "Alphasky\\Base\\Facades\\EmailHandler",
+                "Filter": "Alphasky\\Base\\Facades\\Filter",
+                "Form": "Alphasky\\Base\\Facades\\Form",
+                "Html": "Alphasky\\Base\\Facades\\Html",
+                "JsValidator": "Alphasky\\JsValidation\\Facades\\JsValidator",
+                "MacroableModels": "Alphasky\\Base\\Facades\\MacroableModels",
+                "MetaBox": "Alphasky\\Base\\Facades\\MetaBox",
+                "PageTitle": "Alphasky\\Base\\Facades\\PageTitle",
+                "PanelSectionManager": "Alphasky\\Base\\Facades\\PanelSectionManager",
+                "RvMedia": "Alphasky\\Media\\Facades\\RvMedia",
+                "Setting": "Alphasky\\Setting\\Facades\\Setting"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

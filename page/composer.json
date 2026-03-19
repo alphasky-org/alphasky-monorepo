@@ -1,0 +1,22 @@
+{
+    "version": "1.0.0",
+    "name": "alphasky/page",
+    "description": "Page package",
+    "type": "package",
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\Page\\": "src"
+        }
+    },
+    "require": {
+        "alphasky/platform": "1.0.0",
+        "alphasky/revision": "1.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\Page\\Providers\\PageServiceProvider"
+            ]
+        }
+    }
+}

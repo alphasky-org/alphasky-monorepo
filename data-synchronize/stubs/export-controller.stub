@@ -1,0 +1,15 @@
+<?php
+
+namespace {{ namespace }};
+
+use Alphasky\DataSynchronize\Exporter\Exporter;
+use Alphasky\DataSynchronize\Http\Controllers\ExportController;
+use {{ exporterNamespace }};
+
+class {{ class }} extends ExportController
+{
+    protected function getExporter(): Exporter
+    {
+        return {{ exporter }}::make();
+    }
+}

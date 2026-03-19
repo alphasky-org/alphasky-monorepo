@@ -1,0 +1,25 @@
+{
+    "version": "1.0.0",
+    "name": "alphasky/seo-helper",
+    "description": "SEO helper package",
+    "type": "package",
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\SeoHelper\\": "src"
+        }
+    },
+    "require": {
+        "alphasky/platform": "1.0.0",
+        "alphasky/theme": "1.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\SeoHelper\\Providers\\SeoHelperServiceProvider"
+            ],
+            "aliases": {
+                "SeoHelper": "Alphasky\\SeoHelper\\Facades\\SeoHelper"
+            }
+        }
+    }
+}

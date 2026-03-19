@@ -1,0 +1,25 @@
+{
+    "version": "1.0.0",
+    "name": "alphasky/menu",
+    "description": "Menu package",
+    "type": "package",
+    "autoload": {
+        "psr-4": {
+            "Alphasky\\Menu\\": "src"
+        }
+    },
+    "require": {
+        "alphasky/platform": "1.0.0",
+        "alphasky/theme": "1.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Alphasky\\Menu\\Providers\\MenuServiceProvider"
+            ],
+            "aliases": {
+                "Menu": "Alphasky\\Menu\\Facades\\Menu"
+            }
+        }
+    }
+}
