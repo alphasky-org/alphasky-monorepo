@@ -30,7 +30,7 @@ trait LoadAndPublishDataTrait
 
         $modulePath = str_replace('/src/Providers', '', File::dirname($reflection->getFilename()));
 
-        if (! Str::contains($modulePath, base_path('platform/plugins'))) {
+        if (! Str::contains($modulePath, base_path('vendor/alphasky')) && ! Str::contains($modulePath, base_path('platform/plugins'))) {
             $modulePath = base_path('platform/' . $this->getDashedNamespace());
         }
 

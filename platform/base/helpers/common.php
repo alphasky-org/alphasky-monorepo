@@ -114,13 +114,17 @@ if (! function_exists('platform_path')) {
 if (! function_exists('core_path')) {
     function core_path(?string $path = null): string
     {
-        return platform_path('core' . ($path ? DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR) : ''));
+        $path = ltrim((string) $path, DIRECTORY_SEPARATOR);
+
+        return base_path('vendor/alphasky/platform' . ($path ? DIRECTORY_SEPARATOR . $path : ''));
     }
 }
 
 if (! function_exists('package_path')) {
     function package_path(?string $path = null): string
     {
-        return platform_path('packages' . ($path ? DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR) : ''));
+        $path = ltrim((string) $path, DIRECTORY_SEPARATOR);
+
+        return base_path('vendor/alphasky' . ($path ? DIRECTORY_SEPARATOR . $path : ''));
     }
 }
