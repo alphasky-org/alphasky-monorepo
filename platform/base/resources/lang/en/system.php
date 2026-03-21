@@ -122,5 +122,5 @@ return [
         'success_message' => 'Cleaned data successfully',
         'not_enabled_yet' => 'This featured is not enabled yet. <br />Please add into .env: <code>CMS_ENABLED_CLEANUP_DATABASE=true</code> to enable this feature!',
     ],
-    'cache_too_large_alert' => 'Your cache folder is too large ~:size. Please go to Platform administration -> Cache management and clear it to reduce disk space.',
+    'cache_too_large_alert' => 'Your cache folder is too large ~:size. Please go to administration -> Cache management and clear it to reduce disk space.',
 ];

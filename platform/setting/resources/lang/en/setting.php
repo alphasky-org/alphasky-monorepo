@@ -437,7 +437,7 @@ return [
         'step_1' => 'Open your .env file in a text editor',
         'step_2' => 'Add or update the security settings shown above',
         'step_3' => 'Save the .env file',
-        'step_4' => 'Clear cache using Admin Panel → Platform Administration → Cache Management',
+        'step_4' => 'Clear cache using Admin Panel → Administration → Cache Management',
         'security_headers_info' => 'Security Headers Information',
         'security_headers_list' => 'When enabled, the following headers are added to all responses:',
         'header_nosniff' => 'Prevents browsers from guessing content types',

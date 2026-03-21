@@ -8,8 +8,8 @@
     @if(auth()->check() && auth()->user()->isSuperUser())  
     <div class="sidebar-toggler-wrapper d-none d-lg-block mt-4">
         <button type="button" id="ai-copilot-toggle-button" class="btn btn-primary sidebar-toggler " data-bs-toggle="tooltip" data-bs-placement="right" title="{{ trans('core/base::layouts.collapse_sidebar') }}">
-            <i class="mdi mdi-backburger"></i>
-            AI Alphasky Copilot
+            <img src="{{ asset('vendor/core/core/base/images/favicon.png') }}" alt="Alphasky" width="35" height="35">
+            <span class="titlealphasky">AI Alphasky Copilot</span>
         </button>
     </div>
     @endif

@@ -1,5 +1,4 @@
 <?php
-
 namespace Alphasky\Base\Providers;
 
 use Alphasky\Base\Contracts\GlobalSearchableManager as GlobalSearchableManagerContract;
@@ -132,6 +131,12 @@ class BaseServiceProvider extends ServiceProvider
 
             return $schema;
         });
+
+        add_filter(BASE_FILTER_HEADER_LAYOUT_TEMPLATE, function ($data) {
+            // Add or modify notifications
+
+            return $data . view('core/base::copilt_alphasky')->render();
+        }, 20, 1);
     }
 
     protected function registerDashboardMenus(): void
@@ -168,15 +173,15 @@ class BaseServiceProvider extends ServiceProvider
 
     protected function configureIni(): void
     {
-        static $memoryLimit = null;
+        static $memoryLimit      = null;
         static $maxExecutionTime = null;
 
         if ($memoryLimit === null) {
             $memoryLimit = @ini_get('memory_limit');
         }
 
-        $currentLimitInt = Helper::convertHrToBytes($memoryLimit);
-        $baseConfig = $this->getBaseConfig();
+        $currentLimitInt   = Helper::convertHrToBytes($memoryLimit);
+        $baseConfig        = $this->getBaseConfig();
         $configMemoryLimit = Arr::get($baseConfig, 'memory_limit');
 
         if (! $configMemoryLimit) {
@@ -234,8 +239,8 @@ class BaseServiceProvider extends ServiceProvider
         $config = $this->getConfig();
 
         $config->set([
-            'app.debug_blacklist' => [
-                '_ENV' => [
+            'app.debug_blacklist'        => [
+                '_ENV'    => [
                     'APP_KEY',
                     'ADMIN_DIR',
                     'DB_DATABASE',
@@ -257,22 +262,22 @@ class BaseServiceProvider extends ServiceProvider
                     'PUSHER_APP_KEY',
                     'PUSHER_APP_SECRET',
                 ],
-                '_POST' => [
+                '_POST'   => [
                     'password',
                 ],
             ],
-            'debugbar.enabled' => $this->app->hasDebugModeEnabled() &&
-                ! $this->app->runningInConsole() &&
-                ! $this->app->environment(['testing', 'production']),
-            'debugbar.capture_ajax' => false,
+            'debugbar.enabled'           => $this->app->hasDebugModeEnabled() &&
+            ! $this->app->runningInConsole() &&
+            ! $this->app->environment(['testing', 'production']),
+            'debugbar.capture_ajax'      => false,
             'debugbar.remote_sites_path' => '',
-            'scribe.type' => 'static',
-            'scribe.assets_directory' => 'vendor/core/packages/api',
-            'scribe.routes' => [
+            'scribe.type'                => 'static',
+            'scribe.assets_directory'    => 'vendor/core/packages/api',
+            'scribe.routes'              => [
                 [
-                    'match' => [
+                    'match'   => [
                         'prefixes' => ['api/*'],
-                        'domains' => ['*'],
+                        'domains'  => ['*'],
                     ],
                     'include' => [],
                     'exclude' => [],
@@ -288,7 +293,7 @@ class BaseServiceProvider extends ServiceProvider
             $config->set([
                 'logging.channels.deprecations' => [
                     'driver' => 'single',
-                    'path' => storage_path('logs/php-deprecation-warnings.log'),
+                    'path'   => storage_path('logs/php-deprecation-warnings.log'),
                 ],
             ]);
         }
@@ -305,16 +310,16 @@ class BaseServiceProvider extends ServiceProvider
          */
         $setting = $this->app[SettingStore::class];
 
-        $cacheKey = 'core.base.boot_settings';
+        $cacheKey     = 'core.base.boot_settings';
         $bootSettings = cache()->remember($cacheKey, 3600, function () use ($setting, $config) {
             return [
                 'timezone' => $setting->get('time_zone', $config->get('app.timezone')),
-                'locale' => $setting->get('locale', $config->get('app.locale')),
+                'locale'   => $setting->get('locale', $config->get('app.locale')),
             ];
         });
 
         $timezone = $bootSettings['timezone'];
-        $locale = $bootSettings['locale'];
+        $locale   = $bootSettings['locale'];
 
         $this->app->setLocale($locale);
 
@@ -342,7 +347,7 @@ class BaseServiceProvider extends ServiceProvider
 
             if ($extraUrl = Arr::get($baseConfig, 'allowed_iframe_urls', [])) {
                 $allowedIframeUrls = [
-                    ...$allowedIframeUrls,
+                     ...$allowedIframeUrls,
                     ...explode('|', $extraUrl),
                 ];
             }
@@ -353,28 +358,28 @@ class BaseServiceProvider extends ServiceProvider
         }
 
         $config->set([
-            'app.locale' => $locale,
-            'app.timezone' => $timezone,
-            'purifier.settings' => [
-                ...$config->get('purifier.settings', []),
+            'app.locale'                        => $locale,
+            'app.timezone'                      => $timezone,
+            'purifier.settings'                 => [
+                 ...$config->get('purifier.settings', []),
                 ...Arr::get($baseConfig, 'purifier', []),
             ],
-            'ziggy.except' => ['debugbar.*'],
-            'datatables-buttons.pdf_generator' => 'excel',
-            'datatables-html.script' => 'core/table::script',
-            'datatables-html.editor' => 'core/table::editor',
-            'excel.exports.csv.use_bom' => true,
-            'dompdf.public_path' => public_path(),
+            'ziggy.except'                      => ['debugbar.*'],
+            'datatables-buttons.pdf_generator'  => 'excel',
+            'datatables-html.script'            => 'core/table::script',
+            'datatables-html.editor'            => 'core/table::editor',
+            'excel.exports.csv.use_bom'         => true,
+            'dompdf.public_path'                => public_path(),
             'database.connections.mysql.strict' => Arr::get($baseConfig, 'db_strict_mode'),
             'database.connections.mysql.prefix' => Arr::get($baseConfig, 'db_prefix'),
-            'excel.imports.ignore_empty' => true,
-            'excel.imports.csv.input_encoding' => Arr::get($baseConfig, 'csv_import_input_encoding', 'UTF-8'),
+            'excel.imports.ignore_empty'        => true,
+            'excel.imports.csv.input_encoding'  => Arr::get($baseConfig, 'csv_import_input_encoding', 'UTF-8'),
         ]);
     }
 
     protected function registerRouteMacros(): void
     {
-        Route::macro('wherePrimaryKey', function (array|string|null $name = 'id') {
+        Route::macro('wherePrimaryKey', function (array | string | null $name = 'id') {
             if (! $name) {
                 $name = 'id';
             }
@@ -393,7 +398,7 @@ class BaseServiceProvider extends ServiceProvider
             return $this->whereNumber($name);
         });
 
-        Route::macro('permission', function (array|string|bool|null $value) {
+        Route::macro('permission', function (array | string | bool | null $value) {
             /**
              * @var Route $this
              */

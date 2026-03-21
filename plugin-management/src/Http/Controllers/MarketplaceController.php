@@ -94,7 +94,7 @@ class MarketplaceController extends BaseController
     public function install(string $id): BaseHttpResponse
     {
         $detail = $this->detail($id);
-
+       
         $version = $detail['data']['minimum_core_version'];
         if (version_compare($version, get_core_version(), '>')) {
             return $this
