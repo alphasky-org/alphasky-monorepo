@@ -1,4 +1,4 @@
-@if(auth()->check() && auth()->user()->isSuperUser() && setting('enable_ai_copilot', false) && setting('copilot_user_id') == auth()->id())  
+@if(auth()->check() && auth()->user()->isSuperUser() && env('enable_ai_copilot', false) && env('copilot_user_id') == auth()->id())  
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ui = {
