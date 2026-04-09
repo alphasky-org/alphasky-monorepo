@@ -286,6 +286,7 @@ return new class () extends Migration {
             $table->timestamp('last_login')->nullable();
             $table->integer('boss')->nullable();
             $table->string('phone', 50)->nullable();
+             $table->timestamp('sessions_invalidated_at')->nullable();
         });
 
         Schema::create('user_groups', function (Blueprint $table) {
