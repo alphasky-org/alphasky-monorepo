@@ -32,4 +32,9 @@ return [
     'locations' => 'Locations',
     'main_navigation' => 'Main Navigation',
     'drag_drop_info' => 'Rearrange menu items by dragging and dropping them to change their order or nest them as submenus.',
+    'widget_custom_menu' => 'Custom Menu',
+    'widget_custom_menu_description' => 'Add a custom menu to your widget area.',
+    'icon_image' => 'Icon image',
+    'icon_image_helper' => 'It will replace Icon Font if it is present.',
+    'select_menu' => 'Select menu',
 ];

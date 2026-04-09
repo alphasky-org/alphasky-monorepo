@@ -228,7 +228,7 @@ class CropAvatar {
 
     submitDone(data) {
         try {
-            data = $.parseJSON(data)
+            data = JSON.parse(data)
         } catch (e) {}
 
         if (data && !data.error) {

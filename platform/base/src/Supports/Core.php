@@ -11,28 +11,33 @@ use Alphasky\Base\Events\SystemUpdateDBMigrating;
 use Alphasky\Base\Events\SystemUpdatePublished;
 use Alphasky\Base\Events\SystemUpdatePublishing;
 use Alphasky\Base\Events\SystemUpdateUnavailable;
+use Alphasky\Base\Exceptions\CouldNotConnectToLicenseServerException;
 use Alphasky\Base\Exceptions\MissingZipExtensionException;
 use Alphasky\Base\Facades\BaseHelper;
 use Alphasky\Base\Services\ClearCacheService;
 use Alphasky\Base\Supports\ValueObjects\CoreProduct;
+use Alphasky\Setting\Facades\Setting;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider as IlluminateServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use League\Flysystem\UnableToWriteFile;
 use Throwable;
 use ZipArchive;
 
 /**
  * DO NOT MODIFY THIS FILE.
- *
- * @readonly
  */
 final class Core
 {
@@ -95,6 +100,20 @@ final class Core
             SystemUpdateAvailable::dispatch($coreProduct);
         });
     }
+    public function getLatestVersion(): CoreProduct|false
+    {
+        try {
+            $response = $this->createRequest('check_update', [
+                'product_id' => $this->productId,
+                'current_version' => '0.0.0',
+            ]);
+
+            return $this->parseProductUpdateResponse($response);
+        } catch (CouldNotConnectToLicenseServerException) {
+            return false;
+        }
+    }
+    
 
     public function publishUpdateAssets(): void
     {

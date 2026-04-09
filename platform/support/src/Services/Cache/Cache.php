@@ -90,6 +90,8 @@ class Cache implements CacheInterface
             $cacheKeys = BaseHelper::getFileData($this->config['stored_keys']);
             if (! empty($cacheKeys) && ! in_array($key, Arr::get($cacheKeys, $this->cacheGroup, []))) {
                 $cacheKeys[$this->cacheGroup][] = $key;
+            } else {
+                return true;
             }
         } else {
             $cacheKeys = [];
@@ -114,6 +116,8 @@ class Cache implements CacheInterface
 
     public function forget(string $key): bool
     {
+        $key = $this->generateCacheKey($key);
+
         return $this->cache->forget($key);
     }
 

@@ -44,7 +44,7 @@ class CommandServiceProvider extends ServiceProvider
         ]);
 
         $this->app->afterResolving(Schedule::class, function (Schedule $schedule): void {
-            $schedule->command(ClearExpiredCacheCommand::class)->everyFiveMinutes();
+            $schedule->command(ClearExpiredCacheCommand::class)->daily();
         });
     }
 }

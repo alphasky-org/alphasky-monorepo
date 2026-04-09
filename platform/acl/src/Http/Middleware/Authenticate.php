@@ -4,6 +4,7 @@ namespace Alphasky\ACL\Http\Middleware;
 
 use Closure;
 use Illuminate\Auth\Middleware\Authenticate as BaseAuthenticate;
+use Illuminate\Support\Carbon;
 use Throwable;
 
 class Authenticate extends BaseAuthenticate
@@ -29,6 +30,30 @@ class Authenticate extends BaseAuthenticate
                 }
 
                 return redirect()->route('access.login')->with('error_msg', trans('core/acl::auth.deactivated_message'));
+            }
+
+            if ($user) {
+                $sessionKey = 'auth.session_started_at';
+
+                if (! $request->session()->has($sessionKey)) {
+                    $request->session()->put($sessionKey, Carbon::now()->timestamp);
+                }
+
+                if ($user->sessions_invalidated_at) {
+                    $sessionStartedAt = $request->session()->get($sessionKey);
+
+                    if ($sessionStartedAt && $sessionStartedAt < $user->sessions_invalidated_at->timestamp) {
+                        auth()->logout();
+                        $request->session()->invalidate();
+                        $request->session()->regenerateToken();
+
+                        if ($request->expectsJson()) {
+                            return response()->json(['message' => trans('core/acl::auth.password_changed_message')], 401);
+                        }
+
+                        return redirect()->route('access.login')->with('error_msg', trans('core/acl::auth.password_changed_message'));
+                    }
+                }
             }
 
             $route = $request->route();

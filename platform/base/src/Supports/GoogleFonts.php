@@ -41,7 +41,11 @@ class GoogleFonts
         $url = $font;
 
         try {
-           
+            if ($forceDownload) {
+                return $this->fetch($url, $nonce);
+            }
+
+            $fonts = $this->loadLocal($url, $nonce);
 
             if (! $fonts) {
                 return $this->fetch($url, $nonce);

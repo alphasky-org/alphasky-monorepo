@@ -120,7 +120,7 @@ const laravelValidation = {
                                     validator.showErrors()
                                 } else {
                                     const errors = {}
-                                    errors[element.name] = previous.message = $.isFunction(message)
+                                    errors[element.name] = previous.message = typeof message === 'function'
                                         ? message(value)
                                         : message
                                     validator.invalid[element.name] = true
@@ -253,7 +253,7 @@ const laravelValidation = {
                     } else {
                         errors = {}
                         message = response || validator.defaultMessage(element, 'remote')
-                        errors[element.name] = previous.message = $.isFunction(message) ? message(value) : message[0]
+                        errors[element.name] = previous.message = typeof message === 'function' ? message(value) : message[0]
                         validator.invalid[element.name] = true
                         validator.showErrors(errors)
                     }

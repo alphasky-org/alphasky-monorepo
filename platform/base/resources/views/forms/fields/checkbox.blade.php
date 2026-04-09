@@ -15,7 +15,7 @@
     @endphp
 
     <x-core::form.checkbox
-        :label="($showLabel && $options['label'] !== false && $options['label_show']) ? $options['label'] : null"
+        :label="$showLabel && $options['label'] !== false && $options['label_show'] ? $options['label'] : null"
         :name="$name"
         :value="$options['value']"
         :checked="$options['checked'] ?? $options['value']"

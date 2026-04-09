@@ -41,7 +41,6 @@ class UserTable extends TableAbstract
 
         $this
             ->model(User::class)
-            ->displayActionsAsDropdown(false)
             ->addColumns([
                 LinkableColumn::make('username')
                     ->urlUsing(fn (LinkableColumn $column) => $column->getItem()->url)
@@ -88,13 +87,15 @@ class UserTable extends TableAbstract
                 $this->addActions([
                     Action::make('make-super')
                         ->route('users.make-super')
+                        ->icon('ti ti-shield-check')
                         ->color('success')
                         ->label(trans('core/acl::users.make_super'))
                         ->renderUsing(fn (Action $action) => $action->getItem()->isSuperUser() ? '' : null),
                     Action::make('remove-super')
                         ->route('users.remove-super')
-                        ->label(trans('core/acl::users.remove_super'))
+                        ->icon('ti ti-shield-x')
                         ->color('warning')
+                        ->label(trans('core/acl::users.remove_super'))
                         ->renderUsing(fn (Action $action) => ! $action->getItem()->isSuperUser() ? '' : null),
                 ]);
             })

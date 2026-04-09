@@ -8,6 +8,7 @@ use Alphasky\Base\Facades\Html;
 use Alphasky\Base\Forms\FieldOptions\MediaFileFieldOption;
 use Alphasky\Base\Forms\FieldOptions\SelectFieldOption;
 use Alphasky\Base\Forms\FieldOptions\TextareaFieldOption;
+use Alphasky\Base\Forms\FieldOptions\TextFieldOption;
 use Alphasky\Base\Forms\Fields\MediaFileField;
 use Alphasky\Base\Forms\Fields\NumberField;
 use Alphasky\Base\Forms\Fields\OnOffCheckboxField;
@@ -29,12 +30,12 @@ use Alphasky\Setting\Forms\GeneralSettingForm;
 use Alphasky\Setting\Http\Requests\AdminAppearanceRequest;
 use Alphasky\Setting\Http\Requests\GeneralSettingRequest;
 use Alphasky\Shortcode\Compilers\Shortcode;
-use Alphasky\Shortcode\Compilers\ShortcodeCompiler;
 use Alphasky\Shortcode\Forms\ShortcodeForm;
 use Alphasky\Support\Http\Requests\Request;
+use Alphasky\Theme\Events\RenderingTheme;
 use Alphasky\Theme\Events\RenderingThemeOptionSettings;
-use Alphasky\Theme\Facades\AdminBar;
 use Alphasky\Theme\Facades\Theme;
+use Alphasky\Theme\Listeners\RenderingThemeListener;
 use Alphasky\Theme\Supports\ThemeSupport;
 use Alphasky\Theme\Supports\Vimeo;
 use Alphasky\Theme\Supports\Youtube;
@@ -42,28 +43,28 @@ use Alphasky\Theme\ThemeOption\Fields\RadioField as ThemeOptionRadioField;
 use Alphasky\Theme\ThemeOption\ThemeOptionSection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
-use Throwable;
 
 class HookServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        PageTable::beforeRendering(function (): void {
-            add_filter(PAGE_FILTER_PAGE_NAME_IN_ADMIN_LIST, function (string $name, Page $page) {
-                if (BaseHelper::isHomepage($page->getKey())) {
-                    $name .= Html::tag('span', ' — ' . trans('packages/page::pages.front_page'), [
-                        'class' => 'additional-page-name',
-                    ])->toHtml();
-                }
+        if (class_exists(PageTable::class)) {
+            PageTable::beforeRendering(function (): void {
+                add_filter(PAGE_FILTER_PAGE_NAME_IN_ADMIN_LIST, function (string $name, Page $page) {
+                    if (BaseHelper::isHomepage($page->getKey())) {
+                        $name .= Html::tag('span', ' — ' . trans('packages/page::pages.front_page'), [
+                            'class' => 'additional-page-name',
+                        ])->toHtml();
+                    }
 
-                return $name;
-            }, 10, 2);
-        });
+                    return $name;
+                }, 10, 2);
+            });
+        }
 
         $this->app['events']->listen(RenderingDashboardWidgets::class, function (): void {
             if (! config('packages.theme.general.display_theme_manager_in_admin_panel', true)) {
@@ -80,6 +81,13 @@ class HookServiceProvider extends ServiceProvider
 
             return $defaultView;
         }, 10, 2);
+
+        add_action(BASE_ACTION_PUBLIC_RENDER_SINGLE, function (): void {
+            if (BaseHelper::getRichEditor() === 'ckeditor') {
+                Theme::asset()
+                    ->add('ckeditor-content-styles', 'vendor/core/core/base/libraries/ckeditor/content-styles.css');
+            }
+        }, 15);
 
         add_filter('core_email_template_site_logo', function (?string $defaultLogo): string {
             if (! $defaultLogo && ($logo = Theme::getLogo())) {
@@ -117,6 +125,7 @@ class HookServiceProvider extends ServiceProvider
                                 'id' => 'site_title',
                                 'type' => 'text',
                                 'label' => trans('core/setting::setting.general.site_title'),
+                                'helper' => trans('packages/theme::theme.site_title_helper'),
                                 'attributes' => [
                                     'name' => 'site_title',
                                     'value' => null,
@@ -132,11 +141,12 @@ class HookServiceProvider extends ServiceProvider
                                 'section_id' => 'opt-text-subsection-general',
                                 'type' => 'customSelect',
                                 'label' => trans('core/setting::setting.general.show_site_name'),
+                                'helper' => trans('packages/theme::theme.show_site_name_helper'),
                                 'attributes' => [
                                     'name' => 'show_site_name',
                                     'list' => [
-                                        '0' => __('No'),
-                                        '1' => __('Yes'),
+                                        '0' => trans('packages/theme::theme.common.no'),
+                                        '1' => trans('packages/theme::theme.common.yes'),
                                     ],
                                     'value' => '0',
                                 ],
@@ -146,11 +156,12 @@ class HookServiceProvider extends ServiceProvider
                                 'section_id' => 'opt-text-subsection-general',
                                 'type' => 'customSelect',
                                 'label' => trans('packages/theme::theme.site_title_separator'),
+                                'helper' => trans('packages/theme::theme.site_title_separator_helper'),
                                 'attributes' => [
                                     'name' => 'site_title_separator',
                                     'list' => [
-                                        '-' => __('- (dash)'),
-                                        '|' => __('| (pipe)'),
+                                        '-' => trans('packages/theme::theme.common.dash'),
+                                        '|' => trans('packages/theme::theme.common.pipe'),
                                     ],
                                     'value' => '-',
                                 ],
@@ -159,6 +170,7 @@ class HookServiceProvider extends ServiceProvider
                                 'id' => 'seo_title',
                                 'type' => 'text',
                                 'label' => trans('core/setting::setting.general.seo_title'),
+                                'helper' => trans('packages/theme::theme.seo_title_helper'),
                                 'attributes' => [
                                     'name' => 'seo_title',
                                     'value' => null,
@@ -173,6 +185,7 @@ class HookServiceProvider extends ServiceProvider
                                 'id' => 'seo_description',
                                 'type' => 'textarea',
                                 'label' => trans('core/setting::setting.general.seo_description'),
+                                'helper' => trans('packages/theme::theme.seo_description_helper'),
                                 'attributes' => [
                                     'name' => 'seo_description',
                                     'value' => null,
@@ -235,6 +248,7 @@ class HookServiceProvider extends ServiceProvider
                         ->title(trans('packages/theme::theme.theme_option_breadcrumb'))
                         ->icon('ti ti-directions')
                         ->priority(0)
+                        ->shared()
                         ->fields([
                             ThemeOptionRadioField::make()
                                 ->name('theme_breadcrumb_enabled')
@@ -242,8 +256,8 @@ class HookServiceProvider extends ServiceProvider
                                 ->priority(0)
                                 ->defaultValue(true)
                                 ->options([
-                                    true => __('Yes'),
-                                    false => __('No'),
+                                    true => trans('packages/theme::theme.common.yes'),
+                                    false => trans('packages/theme::theme.common.no'),
                                 ]),
                         ])
                 )
@@ -252,6 +266,7 @@ class HookServiceProvider extends ServiceProvider
                         ->title(trans('packages/theme::theme.theme_option_logo'))
                         ->icon('ti ti-photo')
                         ->priority(0)
+                        ->shared()
                         ->fields([
                             [
                                 'id' => 'favicon',
@@ -297,197 +312,201 @@ class HookServiceProvider extends ServiceProvider
                 );
         });
 
-        add_shortcode('media', __('Media - Video'), __('Support native video, YouTube, Vimeo, TikTok, X (Twitter)'), function (Shortcode $shortcode) {
-            $url = $shortcode->url;
+        if (function_exists('add_shortcode')) {
+            add_shortcode('media', trans('packages/theme::theme.media_shortcode.title'), trans('packages/theme::theme.media_shortcode.description'), function (Shortcode $shortcode) {
+                $url = $shortcode->url;
 
-            if (! $url) {
-                return null;
-            }
-
-            $url = rtrim($url, '/');
-
-            if (! $url) {
-                return null;
-            }
-
-            $data = [
-                'url' => $url,
-            ];
-
-            if ($shortcode->width) {
-                $data['width'] = $shortcode->width;
-            }
-
-            if ($shortcode->height) {
-                $data['height'] = $shortcode->height;
-            }
-
-            if ($shortcode->centered && $shortcode->centered === 'yes') {
-                $data['centered'] = true;
-            }
-
-            if ($shortcode->margin_top || $shortcode->margin_top === '0') {
-                $data['margin_top'] = (int) $shortcode->margin_top;
-            }
-
-            if ($shortcode->margin_bottom || $shortcode->margin_bottom === '0') {
-                $data['margin_bottom'] = (int) $shortcode->margin_bottom;
-            }
-
-            if ($shortcode->margin_start || $shortcode->margin_start === '0') {
-                $data['margin_start'] = (int) $shortcode->margin_start;
-            }
-
-            if ($shortcode->margin_end || $shortcode->margin_end === '0') {
-                $data['margin_end'] = (int) $shortcode->margin_end;
-            }
-
-            $type = null;
-
-            if (Youtube::isYoutubeURL($url)) {
-                $data['url'] = Youtube::getYoutubeVideoEmbedURL($url);
-
-                $type = 'youtube';
-            } elseif (Vimeo::isVimeoURL($url)) {
-                $videoId = Vimeo::getVimeoID($url);
-                if ($videoId) {
-                    $data['url'] = 'https://player.vimeo.com/video/' . $videoId;
-
-                    $type = 'vimeo';
+                if (! $url) {
+                    return null;
                 }
-            } elseif (preg_match(
-                '/^.*https:\/\/(?:m|www|vm)?\.?tiktok\.com\/((?:.*\b(?:(?:usr|v|embed|user|video)\/|\?shareId=|\&item_id=)(\d+))|\w+)/',
-                $url
-            )) {
-                $type = 'tiktok';
 
-                $data['url'] = $url;
-                $data['video_id'] = Str::afterLast($url, 'video/');
+                $url = rtrim($url, '/');
 
-                Theme::asset()->container('footer')->add(
-                    'tiktok-embed',
-                    'https://www.tiktok.com/embed.js',
-                    attributes: ['async' => true]
-                );
-            } elseif (preg_match('/^.*https:\/\/twitter\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)/', $url)) {
-                $data['url'] = $url;
+                if (! $url) {
+                    return null;
+                }
 
-                $type = 'twitter';
+                $data = [
+                    'url' => $url,
+                ];
 
-                Theme::asset()->container('footer')->add(
-                    'twitter-embed',
-                    'https://platform.twitter.com/widgets.js',
-                    attributes: ['async' => true, 'charset' => 'utf-8']
-                );
-            } elseif (in_array(Str::lower(File::extension($url)), ['mp4', 'webm', 'ogg'])) {
-                $data['width'] = $shortcode->width ?: '100%';
-                $data['height'] = $shortcode->height ?: 400;
-                $data['extension'] = File::extension($url) ?: 'mp4';
-                $data['url'] = $url;
+                if ($shortcode->width) {
+                    $data['width'] = $shortcode->width;
+                }
 
-                $type = 'video';
-            }
+                if ($shortcode->height) {
+                    $data['height'] = $shortcode->height;
+                }
 
-            return view('packages/theme::shortcodes.media', ['type' => $type, 'data' => $data])->render();
+                if ($shortcode->centered && $shortcode->centered === 'yes') {
+                    $data['centered'] = true;
+                }
+
+                if ($shortcode->margin_top || $shortcode->margin_top === '0') {
+                    $data['margin_top'] = (int) $shortcode->margin_top;
+                }
+
+                if ($shortcode->margin_bottom || $shortcode->margin_bottom === '0') {
+                    $data['margin_bottom'] = (int) $shortcode->margin_bottom;
+                }
+
+                if ($shortcode->margin_start || $shortcode->margin_start === '0') {
+                    $data['margin_start'] = (int) $shortcode->margin_start;
+                }
+
+                if ($shortcode->margin_end || $shortcode->margin_end === '0') {
+                    $data['margin_end'] = (int) $shortcode->margin_end;
+                }
+
+                $type = null;
+
+                if (Youtube::isYoutubeURL($url)) {
+                    $data['url'] = Youtube::getYoutubeVideoEmbedURL($url);
+
+                    $type = 'youtube';
+                } elseif (Vimeo::isVimeoURL($url)) {
+                    $videoId = Vimeo::getVimeoID($url);
+                    if ($videoId) {
+                        $data['url'] = 'https://player.vimeo.com/video/' . $videoId;
+
+                        $type = 'vimeo';
+                    }
+                } elseif (preg_match(
+                    '/^.*https:\/\/(?:m|www|vm)?\.?tiktok\.com\/((?:.*\b(?:(?:usr|v|embed|user|video)\/|\?shareId=|\&item_id=)(\d+))|\w+)/',
+                    $url
+                )) {
+                    $type = 'tiktok';
+
+                    $data['url'] = $url;
+                    $data['video_id'] = Str::afterLast($url, 'video/');
+
+                    Theme::asset()->container('footer')->add(
+                        'tiktok-embed',
+                        'https://www.tiktok.com/embed.js',
+                        attributes: ['async' => true]
+                    );
+                } elseif (preg_match('/^.*https:\/\/twitter\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)/', $url)) {
+                    $data['url'] = $url;
+
+                    $type = 'twitter';
+
+                    Theme::asset()->container('footer')->add(
+                        'twitter-embed',
+                        'https://platform.twitter.com/widgets.js',
+                        attributes: ['async' => true, 'charset' => 'utf-8']
+                    );
+                } elseif (in_array(Str::lower(File::extension($url)), ['mp4', 'webm', 'ogg'])) {
+                    $data['width'] = $shortcode->width ?: '100%';
+                    $data['height'] = $shortcode->height ?: 400;
+                    $data['extension'] = File::extension($url) ?: 'mp4';
+                    $data['url'] = $url;
+
+                    $type = 'video';
+                }
+
+                return view('packages/theme::shortcodes.media', ['type' => $type, 'data' => $data])->render();
+            });
+
+            shortcode()->setPreviewImage('media', asset('vendor/core/packages/theme/images/ui-blocks/media.jpg'));
+
+            shortcode()->setAdminConfig('media', function (array $attributes) {
+                return ShortcodeForm::createFromArray($attributes)
+                    ->add('url', TextField::class, [
+                        'label' => trans('packages/theme::theme.media_shortcode.url'),
+                        'attr' => [
+                            'placeholder' => trans('packages/theme::theme.media_shortcode.url_placeholder'),
+                        ],
+                    ])
+                    ->add('width', NumberField::class, [
+                        'label' => trans('packages/theme::theme.media_shortcode.width'),
+                        'default_value' => 420,
+                    ])
+                    ->add('height', NumberField::class, [
+                        'label' => trans('packages/theme::theme.media_shortcode.height'),
+                        'default_value' => 315,
+                    ])
+                    ->add('centered', RadioField::class, [
+                        'label' => trans('packages/theme::theme.media_shortcode.center'),
+                        'values' => [
+                            'no' => trans('packages/theme::theme.common.no'),
+                            'yes' => trans('packages/theme::theme.common.yes'),
+                        ],
+                        'default_value' => 'no',
+                    ])
+                    ->add('margin_top', NumberField::class, [
+                        'label' => trans('packages/theme::theme.media_shortcode.margin_top'),
+                        'default_value' => 0,
+                    ])
+                    ->add('margin_bottom', NumberField::class, [
+                        'label' => trans('packages/theme::theme.media_shortcode.margin_bottom'),
+                        'default_value' => 20,
+                    ])
+                    ->add('margin_start', NumberField::class, [
+                        'label' => trans('packages/theme::theme.media_shortcode.margin_start'),
+                        'default_value' => 0,
+                        'helper' => trans('packages/theme::theme.media_shortcode.margin_start_helper'),
+                    ])
+                    ->add('margin_end', NumberField::class, [
+                        'label' => trans('packages/theme::theme.media_shortcode.margin_end'),
+                        'default_value' => 0,
+                        'helper' => trans('packages/theme::theme.media_shortcode.margin_end_helper'),
+                    ]);
+            });
+
+            add_shortcode('audio', trans('packages/theme::theme.audio_shortcode.title'), trans('packages/theme::theme.audio_shortcode.description'), function (Shortcode $shortcode) {
+                $url = $shortcode->url;
+
+                if (! $url) {
+                    return null;
+                }
+
+                $url = rtrim($url, '/');
+
+                if (! $url) {
+                    return null;
+                }
+
+                $data = [
+                    'url' => $url,
+                    'type' => $shortcode->type ?: 'audio/mpeg',
+                ];
+
+                return view('packages/theme::shortcodes.audio', ['data' => $data])->render();
+            });
+
+            shortcode()->setAdminConfig('audio', function (array $attributes) {
+                return ShortcodeForm::createFromArray($attributes)
+                    ->add('url', MediaFileField::class, MediaFileFieldOption::make()->label(trans('packages/theme::theme.audio_shortcode.url')))
+                    ->add('type', SelectField::class, [
+                        'label' => trans('packages/theme::theme.audio_shortcode.type'),
+                        'choices' => [
+                            'audio/mpeg' => 'audio/mpeg',
+                            'audio/ogg' => 'audio/ogg',
+                            'audio/wav' => 'audio/wav',
+                        ],
+                    ]);
+            });
+
+            shortcode()->ignoreLazyLoading(['media', 'audio']);
+        }
+
+        $this->app['events']->listen(RenderingTheme::class, function (): void {
+            add_filter(THEME_FRONT_HEADER, function (?string $html): ?string {
+                $file = Theme::getStyleIntegrationPath();
+                if ($this->app['files']->exists($file)) {
+                    $html .= PHP_EOL . Html::style(Theme::asset()->url('css/style.integration.css?v=' . filectime($file)));
+                }
+
+                return $html;
+            }, 15);
         });
-
-        shortcode()->setPreviewImage('media', asset('vendor/core/packages/theme/images/ui-blocks/media.jpg'));
-
-        shortcode()->setAdminConfig('media', function (array $attributes) {
-            return ShortcodeForm::createFromArray($attributes)
-                ->add('url', TextField::class, [
-                    'label' => __('Media URL'),
-                    'attr' => [
-                        'placeholder' => __('YouTube, Vimeo, TikTok, ...'),
-                    ],
-                ])
-                ->add('width', NumberField::class, [
-                    'label' => __('Width'),
-                    'default_value' => 420,
-                ])
-                ->add('height', NumberField::class, [
-                    'label' => __('Height'),
-                    'default_value' => 315,
-                ])
-                ->add('centered', RadioField::class, [
-                    'label' => __('Center Video'),
-                    'values' => [
-                        'no' => __('No'),
-                        'yes' => __('Yes'),
-                    ],
-                    'default_value' => 'no',
-                ])
-                ->add('margin_top', NumberField::class, [
-                    'label' => __('Margin Top (px)'),
-                    'default_value' => 0,
-                ])
-                ->add('margin_bottom', NumberField::class, [
-                    'label' => __('Margin Bottom (px)'),
-                    'default_value' => 20,
-                ])
-                ->add('margin_start', NumberField::class, [
-                    'label' => __('Margin Start (px)'),
-                    'default_value' => 0,
-                    'helper' => __('Left margin in LTR, right margin in RTL'),
-                ])
-                ->add('margin_end', NumberField::class, [
-                    'label' => __('Margin End (px)'),
-                    'default_value' => 0,
-                    'helper' => __('Right margin in LTR, left margin in RTL'),
-                ]);
-        });
-
-        add_shortcode('audio', __('Media - Audio'), __('Support native audio'), function (Shortcode $shortcode) {
-            $url = $shortcode->url;
-
-            if (! $url) {
-                return null;
-            }
-
-            $url = rtrim($url, '/');
-
-            if (! $url) {
-                return null;
-            }
-
-            $data = [
-                'url' => $url,
-                'type' => $shortcode->type ?: 'audio/mpeg',
-            ];
-
-            return view('packages/theme::shortcodes.audio', ['data' => $data])->render();
-        });
-
-        shortcode()->setAdminConfig('audio', function (array $attributes) {
-            return ShortcodeForm::createFromArray($attributes)
-                ->add('url', MediaFileField::class, MediaFileFieldOption::make()->label(__('Audio File')))
-                ->add('type', SelectField::class, [
-                    'label' => __('Type'),
-                    'choices' => [
-                        'audio/mpeg' => 'audio/mpeg',
-                        'audio/ogg' => 'audio/ogg',
-                        'audio/wav' => 'audio/wav',
-                    ],
-                ]);
-        });
-
-        shortcode()->ignoreLazyLoading(['media', 'audio']);
-
-        add_filter(THEME_FRONT_HEADER, function (?string $html): ?string {
-            $file = Theme::getStyleIntegrationPath();
-            if ($this->app['files']->exists($file)) {
-                $html .= PHP_EOL . Html::style(Theme::asset()->url('css/style.integration.css?v=' . filectime($file)));
-            }
-
-            return $html;
-        }, 15);
 
         if (! BaseHelper::hasDemoModeEnabled()) {
-            if (config('packages.theme.general.enable_custom_html_shortcode')) {
+            if (function_exists('add_shortcode') && config('packages.theme.general.enable_custom_html_shortcode')) {
                 add_shortcode(
                     'custom-html',
-                    __('Custom HTML'),
-                    __('Add custom HTML content'),
+                    trans('packages/theme::theme.custom_html_shortcode.title'),
+                    trans('packages/theme::theme.custom_html_shortcode.description'),
                     function (Shortcode $shortcode) {
                         return html_entity_decode($shortcode->getContent());
                     }
@@ -504,8 +523,8 @@ class HookServiceProvider extends ServiceProvider
                             'content',
                             TextareaField::class,
                             TextareaFieldOption::make()
-                                ->label(__('Content'))
-                                ->placeholder(__('HTML code'))
+                                ->label(trans('packages/theme::theme.common.content'))
+                                ->placeholder(trans('packages/theme::theme.common.html_code'))
                                 ->rows(3)
                                 ->addAttribute('data-shortcode-attribute', 'content')
                                 ->value($content)
@@ -516,95 +535,206 @@ class HookServiceProvider extends ServiceProvider
                 shortcode()->ignoreLazyLoading(['custom-html']);
             }
 
-            if (config('packages.theme.general.enable_custom_js')) {
-                if (setting('custom_header_js')) {
-                    add_filter(THEME_FRONT_HEADER, function (?string $html): string {
-                        return $html . ThemeSupport::getCustomJS('header');
-                    }, 15);
-                }
+            if (function_exists('add_shortcode')) {
+                add_shortcode(
+                    'iframe',
+                    trans('packages/theme::theme.iframe_shortcode.title'),
+                    trans('packages/theme::theme.iframe_shortcode.description'),
+                    function (Shortcode $shortcode) {
+                        $content = html_entity_decode($shortcode->getContent());
 
-                if (setting('custom_body_js')) {
-                    add_filter(THEME_FRONT_BODY, function (?string $html): string {
-                        return $html . ThemeSupport::getCustomJS('body');
-                    }, 15);
-                }
+                        if ($content) {
+                            return $content;
+                        }
 
-                if (setting('custom_footer_js')) {
-                    add_filter(THEME_FRONT_FOOTER, function (?string $html): string {
-                        return $html . ThemeSupport::getCustomJS('footer');
-                    }, 15);
-                }
+                        $src = $shortcode->src;
+
+                        if (! $src) {
+                            return '';
+                        }
+
+                        $width = $shortcode->width ?: '100%';
+                        $height = $shortcode->height ?: '500';
+                        $frameborder = $shortcode->frameborder ?: '0';
+                        $allowfullscreen = $shortcode->allowfullscreen !== 'no';
+                        $loading = $shortcode->loading ?: 'lazy';
+
+                        $attributes = [
+                            'src' => e($src),
+                            'width' => e($width),
+                            'height' => e($height),
+                            'frameborder' => e($frameborder),
+                            'loading' => e($loading),
+                        ];
+
+                        if ($shortcode->id) {
+                            $attributes['id'] = e($shortcode->id);
+                        }
+
+                        if ($shortcode->class) {
+                            $attributes['class'] = e($shortcode->class);
+                        }
+
+                        if ($shortcode->name) {
+                            $attributes['name'] = e($shortcode->name);
+                        }
+
+                        if ($shortcode->title) {
+                            $attributes['title'] = e($shortcode->title);
+                        }
+
+                        if ($allowfullscreen) {
+                            $attributes['allowfullscreen'] = 'allowfullscreen';
+                        }
+
+                        $attributeString = collect($attributes)
+                            ->map(fn ($value, $key) => $key . '="' . $value . '"')
+                            ->implode(' ');
+
+                        return '<iframe ' . $attributeString . '></iframe>';
+                    }
+                );
+
+                shortcode()->setAdminConfig('iframe', function (array $attributes, ?string $content) {
+                    return ShortcodeForm::createFromArray($attributes)
+                        ->add(
+                            'title',
+                            TextField::class,
+                            TextFieldOption::make()
+                                ->label(trans('packages/theme::theme.iframe_shortcode.field_title'))
+                                ->placeholder(trans('packages/theme::theme.iframe_shortcode.field_title_placeholder'))
+                                ->helperText(trans('packages/theme::theme.iframe_shortcode.field_title_helper'))
+                                ->addAttribute('data-shortcode-attribute', 'title')
+                        )
+                        ->add(
+                            'content',
+                            TextareaField::class,
+                            TextareaFieldOption::make()
+                                ->label(trans('packages/theme::theme.iframe_shortcode.full_iframe_code'))
+                                ->placeholder('<iframe src="https://example.com/embed" width="100%" height="500"></iframe>')
+                                ->helperText(trans('packages/theme::theme.iframe_shortcode.full_iframe_code_helper'))
+                                ->addAttribute('data-shortcode-attribute', 'content')
+                                ->value($content)
+                        )
+                        ->add(
+                            'src',
+                            TextField::class,
+                            TextFieldOption::make()
+                                ->label(trans('packages/theme::theme.iframe_shortcode.iframe_url'))
+                                ->placeholder('https://example.com/embed/...')
+                                ->helperText(trans('packages/theme::theme.iframe_shortcode.iframe_url_helper'))
+                                ->addAttribute('data-shortcode-attribute', 'src')
+                        )
+                        ->add(
+                            'id',
+                            TextField::class,
+                            TextFieldOption::make()
+                                ->label(trans('packages/theme::theme.iframe_shortcode.id'))
+                                ->placeholder(trans('packages/theme::theme.iframe_shortcode.id_placeholder'))
+                                ->helperText(trans('packages/theme::theme.iframe_shortcode.id_helper'))
+                                ->addAttribute('data-shortcode-attribute', 'id')
+                        )
+                        ->add(
+                            'class',
+                            TextField::class,
+                            TextFieldOption::make()
+                                ->label(trans('packages/theme::theme.iframe_shortcode.class'))
+                                ->placeholder(trans('packages/theme::theme.iframe_shortcode.class_placeholder'))
+                                ->helperText(trans('packages/theme::theme.iframe_shortcode.class_helper'))
+                                ->addAttribute('data-shortcode-attribute', 'class')
+                        )
+                        ->add(
+                            'width',
+                            TextField::class,
+                            TextFieldOption::make()
+                                ->label(trans('packages/theme::theme.iframe_shortcode.width'))
+                                ->placeholder('100%')
+                                ->defaultValue('100%')
+                                ->helperText(trans('packages/theme::theme.iframe_shortcode.width_helper'))
+                                ->addAttribute('data-shortcode-attribute', 'width')
+                        )
+                        ->add(
+                            'height',
+                            TextField::class,
+                            TextFieldOption::make()
+                                ->label(trans('packages/theme::theme.iframe_shortcode.height'))
+                                ->placeholder('500')
+                                ->defaultValue('500')
+                                ->helperText(trans('packages/theme::theme.iframe_shortcode.height_helper'))
+                                ->addAttribute('data-shortcode-attribute', 'height')
+                        )
+                        ->add(
+                            'name',
+                            TextField::class,
+                            TextFieldOption::make()
+                                ->label(trans('packages/theme::theme.iframe_shortcode.name'))
+                                ->placeholder(trans('packages/theme::theme.iframe_shortcode.name_placeholder'))
+                                ->helperText(trans('packages/theme::theme.iframe_shortcode.name_helper'))
+                                ->addAttribute('data-shortcode-attribute', 'name')
+                        )
+                        ->add(
+                            'allowfullscreen',
+                            SelectField::class,
+                            SelectFieldOption::make()
+                                ->label(trans('packages/theme::theme.iframe_shortcode.allow_fullscreen'))
+                                ->choices(['yes' => trans('core/base::base.yes'), 'no' => trans('core/base::base.no')])
+                                ->defaultValue('yes')
+                                ->helperText(trans('packages/theme::theme.iframe_shortcode.allow_fullscreen_helper'))
+                                ->addAttribute('data-shortcode-attribute', 'allowfullscreen')
+                        );
+                });
+
+                shortcode()->ignoreLazyLoading(['iframe']);
             }
 
-            // Add Google Tag Manager noscript to body
-            add_filter(THEME_FRONT_BODY, function (?string $html): string {
-                return ThemeSupport::renderGoogleTagManagerNoscript() . $html;
-            }, 10);
+            $this->app['events']->listen(RenderingTheme::class, function (): void {
+                if (config('packages.theme.general.enable_custom_js')) {
+                    if (setting('custom_header_js')) {
+                        add_filter(THEME_FRONT_HEADER, function (?string $html): string {
+                            return $html . ThemeSupport::getCustomJS('header');
+                        }, 15);
+                    }
 
-            if (config('packages.theme.general.enable_custom_html')) {
-                if (setting('custom_header_html')) {
-                    add_filter(THEME_FRONT_HEADER, function (?string $html): string {
-                        return $html . ThemeSupport::getCustomHtml('header');
-                    }, 16);
+                    if (setting('custom_body_js')) {
+                        add_filter(THEME_FRONT_BODY, function (?string $html): string {
+                            return $html . ThemeSupport::getCustomJS('body');
+                        }, 15);
+                    }
+
+                    if (setting('custom_footer_js')) {
+                        add_filter(THEME_FRONT_FOOTER, function (?string $html): string {
+                            return $html . ThemeSupport::getCustomJS('footer');
+                        }, 15);
+                    }
                 }
 
-                if (setting('custom_body_html')) {
-                    add_filter(THEME_FRONT_BODY, function (?string $html): string {
-                        return $html . ThemeSupport::getCustomHtml('body');
-                    }, 16);
-                }
+                add_filter(THEME_FRONT_BODY, function (?string $html): string {
+                    return ThemeSupport::renderGoogleTagManagerNoscript() . $html;
+                }, 10);
 
-                if (setting('custom_footer_html')) {
-                    add_filter(THEME_FRONT_FOOTER, function (?string $html): string {
-                        return $html . ThemeSupport::getCustomHtml('footer');
-                    }, 16);
+                if (config('packages.theme.general.enable_custom_html')) {
+                    if (setting('custom_header_html')) {
+                        add_filter(THEME_FRONT_HEADER, function (?string $html): string {
+                            return $html . ThemeSupport::getCustomHtml('header');
+                        }, 16);
+                    }
+
+                    if (setting('custom_body_html')) {
+                        add_filter(THEME_FRONT_BODY, function (?string $html): string {
+                            return $html . ThemeSupport::getCustomHtml('body');
+                        }, 16);
+                    }
+
+                    if (setting('custom_footer_html')) {
+                        add_filter(THEME_FRONT_FOOTER, function (?string $html): string {
+                            return $html . ThemeSupport::getCustomHtml('footer');
+                        }, 16);
+                    }
                 }
-            }
+            });
         }
 
-        add_filter(THEME_FRONT_FOOTER, function (?string $html): ?string {
-            try {
-                if (! Auth::guard()->check() || ! AdminBar::isDisplay() || ! (int) setting('show_admin_bar', 1)) {
-                    return $html;
-                }
-
-                return $html . Html::style('vendor/core/packages/theme/css/admin-bar.css') . AdminBar::render();
-            } catch (Throwable) {
-                return $html;
-            }
-        }, 14);
-
-        add_filter(
-            'shortcode_content_compiled',
-            function (?string $html, string $name, $callback, ShortcodeCompiler $compiler) {
-                $editLink = $compiler->getEditLink();
-
-                if (! $editLink || ! setting('show_theme_guideline_link', false)) {
-                    return $html;
-                }
-
-                Theme::asset()
-                    ->usePath(false)
-                    ->add('theme-guideline-css', asset('vendor/core/packages/theme/css/guideline.css'));
-
-                $link = view('packages/theme::guideline-link', [
-                    'html' => $html,
-                    'editLink' => $editLink . '?shortcode=' . $compiler->getName(),
-                    'editLabel' => __('Edit this shortcode'),
-                ])->render();
-
-                return ThemeSupport::insertBlockAfterTopHtmlTags($link, $html);
-            },
-            9999,
-            4
-        );
-
-        add_action(BASE_ACTION_PUBLIC_RENDER_SINGLE, function (): void {
-            if (BaseHelper::getRichEditor() === 'ckeditor') {
-                Theme::asset()
-                    ->add('ckeditor-content-styles', 'vendor/core/core/base/libraries/ckeditor/content-styles.css');
-            }
-        }, 15);
+        $this->app['events']->listen(RenderingTheme::class, RenderingThemeListener::class);
 
         GeneralSettingForm::extend(function (GeneralSettingForm $form): void {
             $availableLocales = Language::getAvailableLocales();
@@ -666,12 +796,18 @@ class HookServiceProvider extends ServiceProvider
         AdminAppearanceSettingForm::extend(function (AdminAppearanceSettingForm $form): void {
             $form
                 ->addAfter(AdminAppearance::getSettingKey('show_menu_item_icon'), 'show_admin_bar', OnOffCheckboxField::class, [
-                    'label' => trans('core/setting::setting.admin_appearance.form.show_admin_bar'),
+                    'label' => trans('packages/theme::theme.admin_appearance.show_admin_bar'),
                     'value' => setting('show_admin_bar', true),
+                    'help_block' => [
+                        'text' => trans('packages/theme::theme.admin_appearance.show_admin_bar_helper'),
+                    ],
                 ])
                 ->addAfter('show_admin_bar', 'show_theme_guideline_link', OnOffCheckboxField::class, [
-                    'label' => trans('core/setting::setting.admin_appearance.form.show_guidelines'),
+                    'label' => trans('packages/theme::theme.admin_appearance.show_guidelines'),
                     'value' => setting('show_theme_guideline_link', false),
+                    'help_block' => [
+                        'text' => trans('packages/theme::theme.admin_appearance.show_guidelines_helper'),
+                    ],
                 ]);
         }, 110);
 

@@ -2,6 +2,7 @@
 
 return [
     'admin_dir' => env('ADMIN_DIR', 'admin'),
+    'disable_front_theme' => env('CMS_DISABLE_FRONT_THEME', false),
     'base_name' => env('APP_NAME', 'Alphasky Technologies'),
     'logo' => '/vendor/core/core/base/images/logo.png',
     'favicon' => '/vendor/core/core/base/images/favicon.png',
@@ -10,6 +11,7 @@ return [
             'js' => [
                 '/vendor/core/core/base/libraries/ckeditor/ckeditor.js',
             ],
+            'font_families' => env('CKEDITOR_FONT_FAMILIES', ''),
         ],
         'tinymce' => [
             'js' => [

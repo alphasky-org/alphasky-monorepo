@@ -16,7 +16,7 @@ class OfferTable extends TableAbstract
                 ->title(trans('plugins/offer::offer.signature')),
                 
             // استخدام عمود التوقيع مع تخصيص الحجم
-            SignatureColumn::make('customer_signature')
+            SignatureColumn::make('member_signature')
                 ->title('توقيع العميل')
                 ->signatureWidth(100)
                 ->signatureHeight(50),

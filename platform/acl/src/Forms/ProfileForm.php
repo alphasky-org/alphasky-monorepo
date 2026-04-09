@@ -5,7 +5,9 @@ namespace Alphasky\ACL\Forms;
 use Alphasky\ACL\Http\Requests\UpdateProfileRequest;
 use Alphasky\ACL\Models\User;
 use Alphasky\Base\Forms\FieldOptions\EmailFieldOption;
+use Alphasky\Base\Forms\FieldOptions\PhoneNumberFieldOption;
 use Alphasky\Base\Forms\FieldOptions\TextFieldOption;
+use Alphasky\Base\Forms\Fields\PhoneNumberField;
 use Alphasky\Base\Forms\Fields\TextField;
 use Alphasky\Base\Forms\FormAbstract;
 
@@ -50,11 +52,12 @@ class ProfileForm extends FormAbstract
             ->add('email', TextField::class, EmailFieldOption::make()->required()->placeholder(trans('core/acl::users.email_placeholder')))
             ->add(
                 'phone',
-                TextField::class,
-                TextFieldOption::make()
+                PhoneNumberField::class,
+                PhoneNumberFieldOption::make()
                     ->label(trans('core/acl::users.phone'))
                     ->placeholder(trans('core/acl::users.phone_placeholder'))
                     ->maxLength(20)
+                    ->withCountryCodeSelection()
             )
             ->setActionButtons(view('core/acl::users.profile.actions')->render());
     }

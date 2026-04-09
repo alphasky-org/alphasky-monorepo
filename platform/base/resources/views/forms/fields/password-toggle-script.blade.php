@@ -6,9 +6,13 @@
         cursor: pointer;
         padding: 10px 15px;
         z-index: 9;
+        height: 100%;
+        display: inline-flex;
+        align-items: center;
     }
 
-    input[data-bb-password]:valid, input[data-bb-password].is-valid {
+    input[data-bb-password]:valid,
+    input[data-bb-password].is-valid {
         background-image: unset;
     }
 
@@ -27,21 +31,22 @@
         window.bbPasswordToggleInitialized = true;
 
         function initPasswordToggles() {
-            document.querySelectorAll('[data-bb-toggle-password]').forEach(function (button) {
+            document.querySelectorAll('[data-bb-toggle-password]').forEach(function(button) {
                 if (button.dataset.initialized === 'true') {
                     return;
                 }
 
                 button.dataset.initialized = 'true';
 
-                button.addEventListener('click', function (e) {
+                button.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
 
                     const inputGroup = this.closest('.input-group');
-                    const passwordField = inputGroup ? inputGroup.querySelector('[data-bb-password]') : null;
+                    const passwordField = inputGroup ? inputGroup.querySelector(
+                        '[data-bb-password]') : null;
 
-                    if (! passwordField) {
+                    if (!passwordField) {
                         console.warn('Password field not found for toggle button');
                         return;
                     }

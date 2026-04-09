@@ -70,10 +70,8 @@ class ThemeService
             ];
         }
 
-        if (! empty($inheritTheme)) {
-            $this->copyThemeOptions($theme);
-            $this->copyThemeWidgets($theme);
-        }
+        $this->copyThemeOptions($theme);
+        $this->copyThemeWidgets($theme);
 
         Theme::setThemeName($theme);
 
@@ -143,18 +141,28 @@ class ThemeService
         }
 
         $copiedWidgets = Widget::query()
-            ->where('theme', $fromTheme)
+            ->where(function ($query) use ($fromTheme): void {
+                $query->where('theme', $fromTheme)
+                    ->orWhere('theme', 'LIKE', $fromTheme . '-%');
+            })
             ->get()
             ->toArray();
 
         foreach ($copiedWidgets as $key => $widget) {
-            $copiedWidgets[$key]['theme'] = $theme;
+            $widgetTheme = $widget['theme'];
+            if ($widgetTheme === $fromTheme) {
+                $copiedWidgets[$key]['theme'] = $theme;
+            } else {
+                $copiedWidgets[$key]['theme'] = str_replace($fromTheme . '-', $theme . '-', $widgetTheme);
+            }
             $copiedWidgets[$key]['data'] = json_encode($widget['data']);
             unset($copiedWidgets[$key]['id']);
         }
 
-        Widget::query()
-            ->insertOrIgnore($copiedWidgets);
+        if (! empty($copiedWidgets)) {
+            Widget::query()
+                ->insertOrIgnore($copiedWidgets);
+        }
     }
 
     protected function validate(string $theme): array
@@ -179,6 +187,29 @@ class ThemeService
             'error' => false,
             'message' => trans('packages/theme::theme.theme_invalid'),
         ];
+    }
+
+    protected function copyDirectoryWithoutOverwriting(string $source, string $destination): void
+    {
+        if (! $this->files->isDirectory($source)) {
+            return;
+        }
+
+        if (! $this->files->isDirectory($destination)) {
+            $this->files->makeDirectory($destination, 0755, true);
+        }
+
+        $items = new \FilesystemIterator($source, \FilesystemIterator::SKIP_DOTS);
+
+        foreach ($items as $item) {
+            $target = $destination . '/' . $item->getBasename();
+
+            if ($item->isDir()) {
+                $this->copyDirectoryWithoutOverwriting($item->getPathname(), $target);
+            } elseif (! $this->files->exists($target)) {
+                $this->files->copy($item->getPathname(), $target);
+            }
+        }
     }
 
     protected function getPath(string $theme, ?string $path = null): string
@@ -219,7 +250,22 @@ class ThemeService
                 $this->files->makeDirectory($publishPath, 0755, true);
             }
 
-            $this->files->copyDirectory($resourcePath, $publishPath);
+            $configFile = theme_path($theme . '/config.php');
+            $inheritTheme = $this->files->exists($configFile)
+                ? ($this->files->getRequire($configFile)['inherit'] ?? null)
+                : null;
+
+            if ($inheritTheme) {
+                $parentResourcePath = $this->getPath($inheritTheme, 'public');
+
+                if ($this->files->isDirectory($parentResourcePath)) {
+                    $this->files->copyDirectory($parentResourcePath, $publishPath);
+                }
+
+                $this->copyDirectoryWithoutOverwriting($resourcePath, $publishPath);
+            } else {
+                $this->files->copyDirectory($resourcePath, $publishPath);
+            }
 
             $screenshot = $this->getPath($theme, 'screenshot.png');
 

@@ -57,7 +57,6 @@ class User extends BaseModel implements
         'password',
         'avatar_id',
         'permissions',
-        'last_login',
     ];
 
     protected $hidden = [
@@ -73,6 +72,7 @@ class User extends BaseModel implements
         'first_name' => SafeContent::class,
         'last_name' => SafeContent::class,
         'last_login' => 'datetime',
+        'sessions_invalidated_at' => 'datetime',
     ];
 
     public function avatar(): BelongsTo

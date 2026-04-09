@@ -44,6 +44,8 @@ return [
     'alt_text' => 'Alt text',
 
     'folder_created' => 'Folder created successfully!',
+    'folder_exists' => 'Folder :folder already exists!',
+    'directory_must_empty' => 'Directory must be empty to be deleted!',
     'gallery' => 'Media gallery',
 
     'trash_error' => 'Error when deleting selected item(s)',
@@ -53,6 +55,13 @@ return [
     'selected_items_move_success' => 'Moved selected item(s) to :name successfully!',
     'selected_items_move_error' => 'Error when moving selected item(s) to :name',
     'destination' => 'Destination',
+    'move' => 'Move',
+    'move_items' => 'Move items',
+    'move_here' => 'Move here',
+    'move_to_root' => 'Move to root folder',
+    'select_destination_folder' => 'Select a destination folder',
+    'root' => 'Root',
+    'go_up' => 'Go up',
     'restore_error' => 'Error when restoring selected item(s)',
     'restore_success' => 'Restore selected item(s) successfully!',
     'copy_success' => 'Copied selected item(s) successfully!',
@@ -134,6 +143,11 @@ return [
             'error' => 'No files selected or cannot download these files',
         ],
 
+        'move' => [
+            'select_destination' => 'Please select a destination folder',
+            'same_location' => 'Items are already in this location',
+        ],
+
         'actions_list' => [
             'basic' => [
                 'preview' => 'Preview',
@@ -144,6 +158,7 @@ return [
                 'copy_indirect_link' => 'Copy indirect link',
                 'rename' => 'Rename',
                 'make_copy' => 'Make a copy',
+                'move' => 'Move',
                 'alt_text' => 'ALT text',
                 'share' => 'Share',
             ],

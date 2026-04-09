@@ -8,6 +8,12 @@ Route::group(['namespace' => 'Alphasky\Widget\Http\Controllers'], function (): v
         Route::group(['prefix' => 'widgets'], function (): void {
             Route::get('load-widget', 'WidgetController@showWidget');
 
+            Route::get('get-widget-form', [
+                'as' => 'widgets.get_form',
+                'uses' => 'WidgetController@getWidgetForm',
+                'permission' => 'widgets.index',
+            ]);
+
             Route::get('', [
                 'as' => 'widgets.index',
                 'uses' => 'WidgetController@index',

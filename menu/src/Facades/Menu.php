@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Alphasky\Menu\Menu addMenuLocation(string $location, string $description)
  * @method static array getMenuLocations()
  * @method static \Alphasky\Menu\Menu removeMenuLocation(string $location)
+ * @method static \Alphasky\Menu\Menu clearMenuLocations()
  * @method static string|null renderMenuLocation(string $location, array $attributes = [])
  * @method static bool isLocationHasMenu(string $location)
  * @method static void load(bool $force = false)

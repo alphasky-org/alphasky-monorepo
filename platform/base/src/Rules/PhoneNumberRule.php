@@ -12,6 +12,8 @@ class PhoneNumberRule implements ValidationRule
     {
         if (! is_string($value)) {
             $fail(trans('validation.string'));
+
+            return;
         }
 
         $rules = BaseHelper::getPhoneValidationRule(asArray: true);
@@ -24,10 +26,14 @@ class PhoneNumberRule implements ValidationRule
 
         if ($length < $min) {
             $fail(trans('validation.min.string', ['min' => $min]));
+
+            return;
         }
 
         if ($length > $max) {
             $fail(trans('validation.max.string', ['max' => $max]));
+
+            return;
         }
 
         if (! preg_match($regex, $value)) {

@@ -15,7 +15,7 @@
             $classAppend = 'tags';
         }
 
-        $options['attr']['class'] = (rtrim(Arr::get($options, 'attr.class'), ' ') ?: '')  . ' ' . $classAppend;
+        $options['attr']['class'] = (rtrim(Arr::get($options, 'attr.class'), ' ') ?: '') . ' ' . $classAppend;
 
         if (Arr::has($options, 'choices')) {
             $choices = $options['choices'];

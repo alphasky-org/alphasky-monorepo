@@ -152,7 +152,7 @@ export class UploadService {
         $label.html(isError ? 'Error' : 'Uploaded')
 
         if (isError) {
-            $progressLine.find('.progress-percent').html('');
+            $progressLine.find('.progress-percent').html('')
         }
 
         if (file.status === 'error') {
@@ -166,11 +166,11 @@ export class UploadService {
                 $progressLine.find('.file-error').html(`<span class="text-danger">${file.xhr.statusText}</span>`)
             }
 
-            $progressLine.find('.progress-percent').html('');
+            $progressLine.find('.progress-percent').html('')
         } else if (response.error) {
             $progressLine.find('.file-error').html(`<span class="text-danger">${response.message}</span>`)
 
-            $progressLine.find('.progress-percent').html('');
+            $progressLine.find('.progress-percent').html('')
         } else {
             Helpers.addToRecent(response.data.id)
             Helpers.setSelectedFile(response.data.id)

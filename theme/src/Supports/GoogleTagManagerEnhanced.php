@@ -2,6 +2,7 @@
 
 namespace Alphasky\Theme\Supports;
 
+use Alphasky\Base\Facades\BaseHelper;
 use Throwable;
 
 class GoogleTagManagerEnhanced
@@ -33,8 +34,12 @@ class GoogleTagManagerEnhanced
         }
     }
 
-    protected static function renderCustomTracking(bool $debugMode): string
+    protected static function renderCustomTracking(): string
     {
+        if (BaseHelper::hasDemoModeEnabled()) {
+            return '';
+        }
+
         $customTrackingHeaderJs = setting('custom_tracking_header_js') ?: setting('google_tag_manager_code');
 
         if (! $customTrackingHeaderJs) {
@@ -144,9 +149,9 @@ class GoogleTagManagerEnhanced
             return self::renderGtmContainer($debugMode);
         }
 
-        $customCode = setting('custom_tracking_header_js') ?: setting('google_tag_manager_code');
+        $customCode = setting('custom_tracking_header_js') || setting('google_tag_manager_code');
         if ($customCode) {
-            return self::renderCustomTracking($debugMode);
+            return self::renderCustomTracking();
         }
 
         $googleTagManagerId = setting('google_tag_manager_id', setting('google_analytics'));
@@ -228,6 +233,10 @@ class GoogleTagManagerEnhanced
 
     protected static function renderCustomNoscript(): string
     {
+        if (BaseHelper::hasDemoModeEnabled()) {
+            return '';
+        }
+
         $customTrackingBodyHtml = setting('custom_tracking_body_html');
 
         return $customTrackingBodyHtml ? trim($customTrackingBodyHtml) : '';

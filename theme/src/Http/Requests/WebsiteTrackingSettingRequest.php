@@ -21,13 +21,13 @@ class WebsiteTrackingSettingRequest extends Request
         ];
 
         if ($type === 'gtm') {
-            $rules['gtm_container_id'] = ['nullable', 'required_if:google_tag_manager_type,gtm', 'string', 'max:255', new GoogleTrackingIdRule('gtm')];
+            $rules['gtm_container_id'] = ['nullable', 'string', 'max:255', new GoogleTrackingIdRule('gtm')];
         } else {
             $rules['gtm_container_id'] = ['nullable', 'string', 'max:255'];
         }
 
         if ($type === 'id') {
-            $rules['google_tag_manager_id'] = ['nullable', 'required_if:google_tag_manager_type,id', 'string', 'max:255', new GoogleTrackingIdRule('ga4')];
+            $rules['google_tag_manager_id'] = ['nullable', 'string', 'max:255', new GoogleTrackingIdRule('ga4')];
         } else {
             $rules['google_tag_manager_id'] = ['nullable', 'string', 'max:255'];
         }

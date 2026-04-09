@@ -45,8 +45,13 @@
     </style>
 @endonce
 
-<div class="shortcode-lazy-loading" data-name="{{ $name }}" data-attributes="{{ json_encode($attributes) }}">
-    @if (! empty($loadingView) && view()->exists($loadingView))
+<div
+    class="shortcode-lazy-loading"
+    data-name="{{ $name }}"
+    data-attributes="{{ json_encode($attributes) }}"
+    @if(!empty($shortcodeId)) data-shortcode-id="{{ $shortcodeId }}" data-shortcode-name="{{ $name }}" @endif
+>
+    @if (!empty($loadingView) && view()->exists($loadingView))
         {!! view($loadingView)->render() !!}
     @else
         <div class="loading-spinner"></div>

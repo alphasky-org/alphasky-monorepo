@@ -201,7 +201,7 @@ export default defineComponent({
                         xmlns="http://www.w3.org/2000/svg"
                         xmlns:xlink="http://www.w3.org/1999/xlink"
                         width="1118.03"
-                        height="765.72"
+                       
                         viewBox="0 0 1118.03 765.72"
                     >
                         <defs>
@@ -979,7 +979,9 @@ export default defineComponent({
             </div>
 
             <div class="mb-3 row row-cards position-relative">
-                <plugin-placeholder v-if="loading" v-for="item in this.lastPluginsCount" :key="item" />
+                <template v-if="loading">
+                    <plugin-placeholder v-for="item in this.lastPluginsCount" :key="item" />
+                </template>
 
                 <plugin-item
                     v-for="(plugin, index) in plugins"

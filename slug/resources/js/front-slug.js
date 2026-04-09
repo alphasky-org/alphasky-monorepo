@@ -75,7 +75,7 @@ class PermalinkField {
             const form = $slugBox.closest('form')
             const $slugId = $slugBox.find('.slug-data')
 
-            if (! $slugBox.length || ! $slugId.length || ! form.length) {
+            if (!$slugBox.length || !$slugId.length || !form.length) {
                 return
             }
 
@@ -90,19 +90,19 @@ class PermalinkField {
                     model: form.find('input[name="model"]').val(),
                     _token: form.find('input[name="_token"]').val(),
                 },
-                success: function(data) {
-                    toggleInputSlugState(true);
+                success: function (data) {
+                    toggleInputSlugState(true)
 
-                    const url = `${$slugId.data('view')}${data.toString().replace('/', '')}`;
+                    const url = `${$slugId.data('view')}${data.toString().replace('/', '')}`
 
-                    $slugBox.find('input[name="slug"]').val(data);
-                    form.find('.page-url-seo p').text(url);
-                    $slugBox.find('.slug-current').val(data);
+                    $slugBox.find('input[name="slug"]').val(data)
+                    form.find('.page-url-seo p').text(url)
+                    $slugBox.find('.slug-current').val(data)
                 },
-                error: function(xhr, status, error) {
-                    console.error('Error:', error);
-                }
-            });
+                error: function (xhr, status, error) {
+                    console.error('Error:', error)
+                },
+            })
         }
     }
 }

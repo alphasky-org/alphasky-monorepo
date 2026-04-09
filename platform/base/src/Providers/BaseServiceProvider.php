@@ -22,6 +22,7 @@ use Alphasky\Base\Supports\Breadcrumb;
 use Alphasky\Base\Supports\CustomResourceRegistrar;
 use Alphasky\Base\Supports\DashboardMenuItem;
 use Alphasky\Base\Supports\Database\Blueprint;
+use Alphasky\Base\Supports\EmailHandler;
 use Alphasky\Base\Supports\Filter;
 use Alphasky\Base\Supports\GoogleFonts;
 use Alphasky\Base\Supports\Helper;
@@ -32,6 +33,7 @@ use Alphasky\Base\Widgets\Contracts\AdminWidget as AdminWidgetContract;
 use Alphasky\Setting\Providers\SettingServiceProvider;
 use Alphasky\Setting\Supports\SettingStore;
 use DateTimeZone;
+use Fruitcake\LaravelDebugbar\LaravelDebugbar;
 use Illuminate\Config\Repository;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Database\Schema\Builder;
@@ -84,6 +86,8 @@ class BaseServiceProvider extends ServiceProvider
 
         $this->app->singleton('core.google-fonts', GoogleFonts::class);
 
+        $this->app->singleton(EmailHandler::class);
+
         $this->registerRouteMacros();
 
         $this->prepareAliasesIfMissing();
@@ -98,7 +102,8 @@ class BaseServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this
-            ->loadAndPublishConfigurations(['permissions', 'assets'])
+            ->loadAndPublishConfigurations(['assets'])
+            ->loadAndPublishConfigurations(['permissions'])
             ->loadAndPublishViews()
             ->loadAnonymousComponents()
             ->loadAndPublishTranslations()
@@ -111,12 +116,15 @@ class BaseServiceProvider extends ServiceProvider
         $this->overridePackagesConfigs();
 
         $this->app->booted(function (): void {
+            $this->overrideDebugbarConfig();
+
             do_action(BASE_ACTION_INIT);
         });
 
-        $this->registerDashboardMenus();
-
-        $this->registerPanelSections();
+        if (BaseHelper::isAdminRequest()) {
+            $this->registerDashboardMenus();
+            $this->registerPanelSections();
+        }
 
         Paginator::useBootstrap();
 
@@ -266,14 +274,9 @@ class BaseServiceProvider extends ServiceProvider
                     'password',
                 ],
             ],
-            'debugbar.enabled'           => $this->app->hasDebugModeEnabled() &&
-            ! $this->app->runningInConsole() &&
-            ! $this->app->environment(['testing', 'production']),
-            'debugbar.capture_ajax'      => false,
-            'debugbar.remote_sites_path' => '',
-            'scribe.type'                => 'static',
-            'scribe.assets_directory'    => 'vendor/core/packages/api',
-            'scribe.routes'              => [
+            'scribe.type' => 'static',
+            'scribe.assets_directory' => 'vendor/core/packages/api',
+            'scribe.routes' => [
                 [
                     'match'   => [
                         'prefixes' => ['api/*'],
@@ -346,9 +349,14 @@ class BaseServiceProvider extends ServiceProvider
             ];
 
             if ($extraUrl = Arr::get($baseConfig, 'allowed_iframe_urls', [])) {
+                $extraUrls = array_map(
+                    fn ($url) => preg_replace('#^https?://(www\.)?#', '', trim($url)),
+                    explode('|', $extraUrl)
+                );
+
                 $allowedIframeUrls = [
-                     ...$allowedIframeUrls,
-                    ...explode('|', $extraUrl),
+                    ...$allowedIframeUrls,
+                    ...$extraUrls,
                 ];
             }
 
@@ -372,8 +380,23 @@ class BaseServiceProvider extends ServiceProvider
             'dompdf.public_path'                => public_path(),
             'database.connections.mysql.strict' => Arr::get($baseConfig, 'db_strict_mode'),
             'database.connections.mysql.prefix' => Arr::get($baseConfig, 'db_prefix'),
-            'excel.imports.ignore_empty'        => true,
-            'excel.imports.csv.input_encoding'  => Arr::get($baseConfig, 'csv_import_input_encoding', 'UTF-8'),
+            'excel.imports.ignore_empty' => true,
+            'excel.imports.csv.input_encoding' => Arr::get($baseConfig, 'csv_import_input_encoding', 'UTF-8'),
+        ]);
+    }
+
+    protected function overrideDebugbarConfig(): void
+    {
+        if (! class_exists(LaravelDebugbar::class)) {
+            return;
+        }
+
+        $this->app['config']->set([
+            'debugbar.enabled' => $this->app->hasDebugModeEnabled() &&
+                ! $this->app->runningInConsole() &&
+                ! $this->app->environment(['testing', 'production']),
+            'debugbar.capture_ajax' => false,
+            'debugbar.remote_sites_path' => '',
         ]);
     }
 

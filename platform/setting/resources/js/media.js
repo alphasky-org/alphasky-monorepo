@@ -56,7 +56,7 @@ $(() => {
                         Alphasky.hideButtonLoading(currentTarget)
                         $modal.modal('hide')
                     }
-                });
+                })
         }
 
         sendRequest()

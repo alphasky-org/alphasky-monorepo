@@ -6,6 +6,7 @@ use Alphasky\Base\Facades\BaseHelper;
 use Alphasky\Sitemap\Sitemap;
 use Alphasky\Slug\Facades\SlugHelper;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 
@@ -268,7 +269,7 @@ class SiteMapManager
         $currentYear = (int) date('Y');
         for ($year = $currentYear - $yearsBack; $year <= $currentYear + 1; $year++) {
             for ($month = 1; $month <= 12; $month++) {
-                $formattedMonth = str_pad($month, 2, '0', STR_PAD_LEFT);
+                $formattedMonth = str_pad((string) $month, 2, '0', STR_PAD_LEFT);
                 $baseKey = "{$prefix}-{$year}-{$formattedMonth}";
                 $this->registerKey($baseKey);
 
@@ -316,5 +317,57 @@ class SiteMapManager
         }
 
         return '^(?:' . implode('|', $patterns) . ')$';
+    }
+
+    protected function addPaginatedSitemapItems(string $key, string $baseKey, Builder $query, string $priority = '0.8'): void
+    {
+        $paginationData = $this->extractPaginationDataByPattern($key, $baseKey, 'monthly-archive');
+
+        if ($paginationData) {
+            $matches = $paginationData['matches'];
+            $year = Arr::get($matches, 1);
+            $month = Arr::get($matches, 2);
+
+            if ($year && $month) {
+                $items = $query
+                    ->whereYear('created_at', $year)
+                    ->whereMonth('created_at', $month)
+                    ->latest('updated_at')
+                    ->select(['id', 'name', 'updated_at'])
+                    ->with(['slugable'])
+                    ->skip($paginationData['offset'])
+                    ->take($paginationData['limit'])
+                    ->get();
+
+                foreach ($items as $item) {
+                    if (! $item->slugable) {
+                        continue;
+                    }
+
+                    SiteMapManager::add($item->url, $item->updated_at, $priority);
+                }
+            }
+        }
+    }
+
+    protected function createPaginatedSitemapsForKey(string $key, Builder $query): void
+    {
+        $items = $query
+            ->selectRaw('YEAR(created_at) as created_year, MONTH(created_at) as created_month, MAX(created_at) as created_at, COUNT(*) as item_count')
+            ->groupBy('created_year', 'created_month')
+            ->orderByDesc('created_year')
+            ->orderByDesc('created_month')
+            ->get();
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            $formattedMonth = str_pad($item->created_month, 2, '0', STR_PAD_LEFT);
+            $baseKey = sprintf($key . '-%s-%s', $item->created_year, $formattedMonth);
+
+            $this->createPaginatedSitemaps($baseKey, $item->item_count, $item->created_at);
+        }
     }
 }

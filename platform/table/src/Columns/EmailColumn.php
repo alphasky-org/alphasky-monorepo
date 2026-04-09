@@ -18,7 +18,11 @@ class EmailColumn extends FormattedColumn implements FormattedColumnContract
     }
 
     public function formattedValue($value): ?string
-    {     
-        return  Html::mailto($value, $value, [], true, false);
+    {
+        if (! $this->isLinkable() || ! $value) {
+            return null;
+        }
+
+        return Html::mailto($value, $value, [], true, false);
     }
 }

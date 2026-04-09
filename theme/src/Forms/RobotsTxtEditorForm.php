@@ -10,6 +10,7 @@ use Alphasky\Base\Forms\Fields\CodeEditorField;
 use Alphasky\Base\Forms\FormAbstract;
 use Alphasky\Theme\Http\Requests\RobotsTxtRequest;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
 
 class RobotsTxtEditorForm extends FormAbstract
 {
@@ -17,6 +18,8 @@ class RobotsTxtEditorForm extends FormAbstract
     {
         $isRobotsTxtWritable = File::isWritable($path = public_path('robots.txt'));
         $robotsTxtContent = $isRobotsTxtWritable && File::exists($path) ? File::get($path) : '';
+        $sitemapUrl = Route::has('public.sitemap') ? route('public.sitemap') : null;
+        $hasSitemapReference = stripos($robotsTxtContent, 'sitemap:') !== false;
 
         $this
             ->setUrl(route('theme.robots-txt.post'))
@@ -29,6 +32,17 @@ class RobotsTxtEditorForm extends FormAbstract
                     AlertFieldOption::make()
                         ->type('warning')
                         ->content(trans('packages/theme::theme.robots_txt_not_writable', ['path' => $path]))
+                );
+            })
+            ->when($sitemapUrl && ! $hasSitemapReference, function (FormAbstract $form) use ($sitemapUrl): void {
+                $form->add(
+                    'robots_txt_sitemap_suggestion',
+                    AlertField::class,
+                    AlertFieldOption::make()
+                        ->type('info')
+                        ->content(trans('packages/theme::theme.robots_txt_sitemap_suggestion', [
+                            'sitemap_url' => $sitemapUrl,
+                        ]))
                 );
             })
             ->add(

@@ -8,10 +8,11 @@ use Alphasky\Widget\Models\Widget;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Event;
 
 class WidgetGroupCollection
 {
-    protected array $groups;
+    protected array $groups = [];
 
     protected Collection|array $data = [];
 
@@ -62,6 +63,8 @@ class WidgetGroupCollection
 
     public function render(string $sidebarId): string
     {
+        Event::dispatch('core.widget:rendering', $sidebarId);
+
         $this->load();
 
         foreach ($this->data as $widget) {
@@ -89,7 +92,14 @@ class WidgetGroupCollection
             $languageCode = $currentLocale && $currentLocale != Language::getDefaultLocaleCode() ? '-' . $currentLocale : null;
         }
 
-        return Widget::query()->where(['theme' => Theme::getThemeName() . $languageCode])->get();
+        $themeName = Theme::getThemeName() . $languageCode;
+        $data = Widget::query()->where(['theme' => $themeName])->get();
+
+        if ($data->isEmpty() && $languageCode !== null) {
+            $data = Widget::query()->where(['theme' => Theme::getThemeName()])->get();
+        }
+
+        return $data;
     }
 
     public function getData(): Collection

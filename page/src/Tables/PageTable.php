@@ -3,6 +3,7 @@
 namespace Alphasky\Page\Tables;
 
 use Alphasky\Page\Models\Page;
+use Alphasky\Page\Supports\Template;
 use Alphasky\Table\Abstracts\TableAbstract;
 use Alphasky\Table\Actions\DeleteAction;
 use Alphasky\Table\Actions\EditAction;
@@ -40,7 +41,7 @@ class PageTable extends TableAbstract
                     ->getValueUsing(function (FormattedColumn $column) {
                         static $pageTemplates;
 
-                        $pageTemplates ??= get_page_templates();
+                        $pageTemplates ??= Template::getPageTemplates();
 
                         return Arr::get($pageTemplates, $column->getItem()->template ?: 'default');
                     }),
@@ -55,7 +56,7 @@ class PageTable extends TableAbstract
                 SelectBulkChange::make()
                     ->name('template')
                     ->title(trans('core/base::tables.template'))
-                    ->choices(fn () => get_page_templates()),
+                    ->choices(fn () => Template::getPageTemplates()),
                 StatusBulkChange::make(),
                 CreatedAtBulkChange::make(),
             ])

@@ -23,8 +23,6 @@ class SlugServiceProvider extends ServiceProvider
 {
     use LoadAndPublishDataTrait;
 
-    protected bool $defer = true;
-
     public function register(): void
     {
         $this->app->bind(SlugInterface::class, function () {

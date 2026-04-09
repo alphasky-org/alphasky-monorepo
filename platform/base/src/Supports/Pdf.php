@@ -152,7 +152,7 @@ class Pdf
                 ],
             ];
 
-            $data = [...$defaultData, ...$this->data];
+            $data = array_replace_recursive($defaultData, $this->data);
 
             switch ($this->supportLanguage) {
                 case 'bangladesh':
@@ -283,14 +283,14 @@ class Pdf
             return $paperSize;
         }
 
-        if (is_array($paperSize) && count($paperSize) === 4) {
+        if (count($paperSize) === 4) {
             $widthMm = ($paperSize[2] - $paperSize[0]) * 0.352778;
             $heightMm = ($paperSize[3] - $paperSize[1]) * 0.352778;
 
             return [round($widthMm, 2), round($heightMm, 2)];
         }
 
-        if (is_array($paperSize) && count($paperSize) === 2) {
+        if (count($paperSize) === 2) {
             return $paperSize;
         }
 

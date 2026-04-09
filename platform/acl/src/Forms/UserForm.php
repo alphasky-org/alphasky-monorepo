@@ -6,8 +6,11 @@ use Alphasky\ACL\Http\Requests\CreateUserRequest;
 use Alphasky\ACL\Models\Role;
 use Alphasky\ACL\Models\User;
 use Alphasky\Base\Forms\FieldOptions\EmailFieldOption;
+use Alphasky\Base\Forms\FieldOptions\PhoneNumberFieldOption;
 use Alphasky\Base\Forms\FieldOptions\SelectFieldOption;
 use Alphasky\Base\Forms\FieldOptions\TextFieldOption;
+use Alphasky\Base\Forms\Fields\PasswordField;
+use Alphasky\Base\Forms\Fields\PhoneNumberField;
 use Alphasky\Base\Forms\Fields\SelectField;
 use Alphasky\Base\Forms\Fields\TextField;
 use Alphasky\Base\Forms\FormAbstract;
@@ -54,15 +57,16 @@ class UserForm extends FormAbstract
             ->add('email', TextField::class, EmailFieldOption::make()->required()->placeholder(trans('core/acl::users.email_placeholder')))
             ->add(
                 'phone',
-                TextField::class,
-                TextFieldOption::make()
+                PhoneNumberField::class,
+                PhoneNumberFieldOption::make()
                     ->label(trans('core/acl::users.phone'))
                     ->placeholder(trans('core/acl::users.phone_placeholder'))
                     ->maxLength(20)
+                    ->withCountryCodeSelection()
             )
             ->add(
                 'password',
-                'password',
+                PasswordField::class,
                 TextFieldOption::make()
                     ->label(trans('core/acl::users.password'))
                     ->placeholder(trans('core/acl::users.password_placeholder'))
@@ -72,7 +76,7 @@ class UserForm extends FormAbstract
             )
             ->add(
                 'password_confirmation',
-                'password',
+                PasswordField::class,
                 TextFieldOption::make()
                     ->label(trans('core/acl::users.password_confirmation'))
                     ->placeholder(trans('core/acl::users.password_confirmation_placeholder'))

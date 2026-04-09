@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static string formatTime(\Carbon\CarbonInterface $timestamp, string|null $format = 'j M Y H:i', bool $translated = false)
  * @method static string|null formatDate(\Carbon\CarbonInterface|string|int|null $date, string|null $format = null, bool $translated = false)
  * @method static string|null formatDateTime(\Carbon\CarbonInterface|string|int|null $date, string|null $format = null, bool $translated = false)
+ * @method static \Carbon\Carbon|null parseDate(string|null $date, string|null $format = null)
  * @method static string humanFilesize(float $bytes, int $precision = 2)
  * @method static mixed getFileData(string $file, bool $convertToArray = true)
  * @method static bool saveFileData(string $path, array|string|null $data, bool $json = true)
@@ -53,6 +54,10 @@ use Illuminate\Support\Facades\Facade;
  * @method static string cleanToastMessage(string $message)
  * @method static mixed getHomepageUrl()
  * @method static array getFonts()
+ * @method static bool isAdminRequest()
+ * @method static bool isFrontendRequest()
+ * @method static bool isConsoleRequest()
+ * @method static void resetAdminRequestCache()
  *
  * @see \Alphasky\Base\Helpers\BaseHelper
  */

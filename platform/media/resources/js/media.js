@@ -6,6 +6,8 @@ import { FolderService } from './App/Services/FolderService'
 import { UploadService } from './App/Services/UploadService'
 import { ActionsService } from './App/Services/ActionsService'
 import { DownloadService } from './App/Services/DownloadService'
+import { MoveService } from './App/Services/MoveService'
+import { DragDropService } from './App/Services/DragDropService'
 import { EditorService } from './integrate'
 
 class MediaManagement {
@@ -14,6 +16,8 @@ class MediaManagement {
         this.UploadService = new UploadService()
         this.FolderService = new FolderService()
         this.DownloadService = new DownloadService()
+        this.MoveService = new MoveService()
+        this.DragDropService = new DragDropService()
 
         this.$body = $('body')
     }
@@ -665,7 +669,7 @@ class MediaManagement {
                 if (!ele_options[0].file_type.match(firstItem.type)) {
                     return false
                 } else {
-                    if (typeof ele_options[0].ext_allowed !== 'undefined' && $.isArray(ele_options[0].ext_allowed)) {
+                    if (typeof ele_options[0].ext_allowed !== 'undefined' && Array.isArray(ele_options[0].ext_allowed)) {
                         if ($.inArray(firstItem.mime_type, ele_options[0].ext_allowed) === -1) {
                             return false
                         }

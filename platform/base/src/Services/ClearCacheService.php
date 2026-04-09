@@ -54,7 +54,13 @@ class ClearCacheService
 
     public function clearCompiledViews(): void
     {
-        foreach ($this->files->glob(config('view.compiled') . '/*.php') as $view) {
+        $compiledPath = config('view.compiled');
+
+        foreach ($this->files->glob($compiledPath . '/*.php') as $view) {
+            if (function_exists('opcache_invalidate')) {
+                @opcache_invalidate($view, true);
+            }
+
             $this->files->delete($view);
         }
     }

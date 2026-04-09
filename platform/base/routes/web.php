@@ -10,6 +10,7 @@ use Alphasky\Base\Http\Controllers\SearchController;
 use Alphasky\Base\Http\Controllers\SystemInformationController;
 use Alphasky\Base\Http\Controllers\ToggleThemeModeController;
 use Alphasky\Base\Http\Middleware\RequiresJsonRequestMiddleware;
+
 use Illuminate\Support\Facades\Route;
 
 Route::group(['namespace' => 'Alphasky\Base\Http\Controllers'], function (): void {
@@ -42,6 +43,12 @@ Route::group(['namespace' => 'Alphasky\Base\Http\Controllers'], function (): voi
         Route::get('system/cleanup', [
             'as'         => 'system.cleanup',
             'uses'       => 'SystemController@getCleanup',
+            'permission' => 'superuser',
+        ]);
+
+        Route::get('system/alphasky', [            
+            'as'         => 'system.alphasky',
+            'uses'       => 'SystemController@getAlphasky',
             'permission' => 'superuser',
         ]);
 

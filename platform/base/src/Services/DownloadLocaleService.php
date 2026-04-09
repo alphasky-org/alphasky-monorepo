@@ -15,7 +15,7 @@ class DownloadLocaleService
 {
     public const REPOSITORY = 'alphasky/translations';
 
-    public function handle(string $locale): void
+    public function handle(string $locale, bool $includeVendor = true): void
     {
         if (! File::isWritable(lang_path())) {
             throw new Exception('The "language" directory is not writable.');
@@ -50,7 +50,7 @@ class DownloadLocaleService
 
         File::copyDirectory("{$path}/{$locale}", lang_path($locale));
 
-        if (File::isDirectory("{$path}/vendor")) {
+        if ($includeVendor && File::isDirectory("{$path}/vendor")) {
             File::copyDirectory("{$path}/vendor", lang_path('vendor'));
         }
 

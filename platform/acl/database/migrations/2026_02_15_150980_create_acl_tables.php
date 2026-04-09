@@ -341,6 +341,27 @@ return new class () extends Migration {
             $table->string('prefix', 120)->default('');
             $table->primary(['lang_code', 'slugs_id']);
         });
+
+        // جدول الاختيارات
+        Schema::create('alphasky_choices', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('survey_id');
+            $table->string('choice', 100);
+            $table->string('name', 200)->nullable();
+            $table->string('choice_filter', 100)->nullable();
+            $table->string('label', 500);
+            $table->string('status', 60)->default('published');
+            $table->timestamp('created_at')->useCurrent()->nullable();
+            $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
+        });
+
+        // جدول ترجمة الاختيارات
+        Schema::create('alphasky_choices_translations', function (Blueprint $table) {
+            $table->string('lang_code', 20);
+            $table->unsignedBigInteger('alphasky_choices_id');
+            $table->string('label', 120)->nullable();
+            $table->primary(['lang_code', 'alphasky_choices_id']);
+        });
     }
 
     public function down(): void
@@ -374,5 +395,7 @@ return new class () extends Migration {
         Schema::dropIfExists('widgets');
         Schema::dropIfExists('slugs');
         Schema::dropIfExists('slugs_translations');
+        Schema::dropIfExists('alphasky_choices_translations');
+        Schema::dropIfExists('alphasky_choices');
     }
 };

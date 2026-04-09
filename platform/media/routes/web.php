@@ -32,6 +32,16 @@ Route::group(['namespace' => 'Alphasky\Media\Http\Controllers'], function (): vo
                 'uses' => 'MediaController@getBreadcrumbs',
             ]);
 
+            Route::get('folder-list', [
+                'as' => 'folder_list',
+                'uses' => 'MediaController@getFolderList',
+            ]);
+
+            Route::get('folder-tree', [
+                'as' => 'folder_tree',
+                'uses' => 'MediaController@getFolderTree',
+            ]);
+
             Route::post('global-actions', [
                 'as' => 'global_actions',
                 'uses' => 'MediaController@postGlobalActions',

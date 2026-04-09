@@ -2,29 +2,23 @@
 
 namespace Alphasky\Sitemap\Providers;
 
-use Alphasky\Base\Events\CreatedContentEvent;
-use Alphasky\Base\Events\DeletedContentEvent;
-use Alphasky\Base\Events\UpdatedContentEvent;
 use Alphasky\Base\Facades\PanelSectionManager;
 use Alphasky\Base\PanelSections\PanelSectionItem;
-use Alphasky\Base\Services\ClearCacheService;
 use Alphasky\Base\Supports\ServiceProvider;
 use Alphasky\Base\Traits\LoadAndPublishDataTrait;
 use Alphasky\Setting\PanelSections\SettingCommonPanelSection;
 use Alphasky\Sitemap\Commands\IndexNowSubmissionCommand;
-use Alphasky\Sitemap\Events\SitemapUpdatedEvent;
-use Alphasky\Sitemap\Listeners\IndexNowSubmissionListener;
 use Alphasky\Sitemap\Services\IndexNowService;
 use Alphasky\Sitemap\Sitemap;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Foundation\Application;
 
-class SitemapServiceProvider extends ServiceProvider
+class SitemapServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     use LoadAndPublishDataTrait;
-
-    protected bool $defer = true;
 
     public function register(): void
     {
@@ -50,29 +44,23 @@ class SitemapServiceProvider extends ServiceProvider
     {
         $this
             ->setNamespace('packages/sitemap')
-            ->loadAndPublishConfigurations(['config', 'permissions'])
+            ->loadAndPublishConfigurations(['config'])
+            ->loadAndPublishConfigurations(['permissions'])
             ->loadAndPublishViews()
             ->loadAndPublishTranslations()
             ->loadRoutes()
             ->publishAssets();
 
-        $this->app['events']->listen([
-            CreatedContentEvent::class,
-            UpdatedContentEvent::class,
-            DeletedContentEvent::class,
-        ], function (): void {
-            ClearCacheService::make()->clearFrameworkCache();
-
-            // Fire sitemap updated event to trigger search engine pings
-            event(new SitemapUpdatedEvent());
-        });
-
-        $this->app['events']->listen(SitemapUpdatedEvent::class, IndexNowSubmissionListener::class);
-
         if ($this->app->runningInConsole()) {
             $this->commands([
                 IndexNowSubmissionCommand::class,
             ]);
+
+            $this->app->afterResolving(Schedule::class, function (Schedule $schedule): void {
+                $schedule
+                    ->command('sitemap:indexnow')
+                    ->dailyAt('02:00');
+            });
         }
 
         PanelSectionManager::default()->beforeRendering(function (): void {

@@ -12,6 +12,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\MalformedUrlException;
 use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Cache;
@@ -33,6 +34,7 @@ class Handler extends ExceptionHandler
         parent::__construct($container);
 
         $this->ignore(PhpSpreadsheetException::class);
+        $this->ignore(MalformedUrlException::class);
 
         $this->baseHttpResponse = new BaseHttpResponse();
     }
@@ -48,6 +50,8 @@ class Handler extends ExceptionHandler
         }
 
         switch (true) {
+            case $e instanceof MalformedUrlException:
+                return response(trans('core/base::errors.bad_request'), 400);
             case $e instanceof DisabledInDemoModeException:
             case $e instanceof MethodNotAllowedHttpException:
                 return $this->baseHttpResponse

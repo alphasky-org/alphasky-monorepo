@@ -47,12 +47,12 @@ class ShortcodeForm extends FormAbstract
                     'enable_lazy_loading',
                     SelectField::class,
                     SelectFieldOption::make()
-                        ->label(__('Enable lazy loading'))
+                        ->label(trans('packages/shortcode::shortcode.form.enable_lazy_loading'))
                         ->choices([
-                            'no' => __('No'),
-                            'yes' => __('Yes'),
+                            'no' => trans('packages/shortcode::shortcode.form.no'),
+                            'yes' => trans('packages/shortcode::shortcode.form.yes'),
                         ])
-                        ->helperText(__('When enabled, shortcode content will be loaded sequentially as the page loads, rather than all at once. This can help improve page load times.'))
+                        ->helperText(trans('packages/shortcode::shortcode.form.lazy_loading_helper'))
                 );
 
             return $this;
@@ -80,12 +80,12 @@ class ShortcodeForm extends FormAbstract
                     'enable_caching',
                     SelectField::class,
                     SelectFieldOption::make()
-                        ->label(__('Enable caching'))
+                        ->label(trans('packages/shortcode::shortcode.form.enable_caching'))
                         ->choices([
-                            'yes' => __('Yes'),
-                            'no' => __('No'),
+                            'yes' => trans('packages/shortcode::shortcode.form.yes'),
+                            'no' => trans('packages/shortcode::shortcode.form.no'),
                         ])
-                        ->helperText(__('When enabled, this shortcode content will be cached to improve performance. Disable for dynamic content that changes frequently.'))
+                        ->helperText(trans('packages/shortcode::shortcode.form.caching_helper'))
                 );
 
             return $this;
@@ -113,7 +113,7 @@ class ShortcodeForm extends FormAbstract
                         AlertField::class,
                         AlertFieldOption::make()
                         ->type('warning')
-                        ->content(__('Due to UI issues, cache for this UI block is disabled via code. This shortcode will not be cached even if caching is enabled.'))
+                        ->content(trans('packages/shortcode::shortcode.form.cache_disabled_notice'))
                     );
             }
 
@@ -134,7 +134,7 @@ class ShortcodeForm extends FormAbstract
                         AlertField::class,
                         AlertFieldOption::make()
                         ->type('warning')
-                        ->content(__('Lazy loading for this UI block is disabled via code. This shortcode will not use lazy loading even if enabled.'))
+                        ->content(trans('packages/shortcode::shortcode.form.lazy_loading_disabled_notice'))
                     );
             }
 
@@ -159,45 +159,46 @@ class ShortcodeForm extends FormAbstract
             'custom_css',
             TextareaField::class,
             TextareaFieldOption::make()
-                ->label(__('Custom CSS (optional)'))
-                ->helperText(__('Please enter your CSS code on a single line. It wont work if it has break line. Some special characters may be escaped.'))
+                ->label(trans('packages/shortcode::shortcode.form.custom_css'))
+                ->helperText(trans('packages/shortcode::shortcode.form.custom_css_helper'))
+                ->shared()
         );
     }
 
     public function withBackgroundColor(string $defaultColor = '#fff'): static
     {
-        return $this
-                ->add(
-                    'background_color',
-                    ColorField::class,
-                    ColorFieldOption::make()
-                        ->label(__('Background color (optional)'))
-                        ->when($defaultColor, fn (ColorFieldOption $option) => $option->defaultValue($defaultColor))
-                );
+        return $this->add(
+            'background_color',
+            ColorField::class,
+            ColorFieldOption::make()
+                ->label(trans('packages/shortcode::shortcode.form.background_color'))
+                ->when($defaultColor, fn (ColorFieldOption $option) => $option->defaultValue($defaultColor))
+                ->shared()
+        );
     }
 
     public function withTextColor(?string $defaultColor = null): static
     {
-        return $this
-            ->add(
-                'text_color',
-                ColorField::class,
-                ColorFieldOption::make()
-                    ->label(__('Text color (optional)'))
-                    ->when($defaultColor, fn (ColorFieldOption $option) => $option->defaultValue($defaultColor))
-                    ->helperText(__('This color may be overridden by the theme. If it doesnt work, please add your CSS in Appearance -> Custom CSS.'))
-            );
+        return $this->add(
+            'text_color',
+            ColorField::class,
+            ColorFieldOption::make()
+                ->label(trans('packages/shortcode::shortcode.form.text_color'))
+                ->when($defaultColor, fn (ColorFieldOption $option) => $option->defaultValue($defaultColor))
+                ->helperText(trans('packages/shortcode::shortcode.form.text_color_helper'))
+                ->shared()
+        );
     }
 
     public function withBackgroundImage(?string $defaultImage = null): static
     {
-        return $this
-            ->add(
-                'background_image',
-                MediaImageField::class,
-                MediaImageFieldOption::make()
-                    ->label(__('Background image (optional)'))
-                    ->when($defaultImage, fn (MediaImageFieldOption $option) => $option->defaultValue($defaultImage))
-            );
+        return $this->add(
+            'background_image',
+            MediaImageField::class,
+            MediaImageFieldOption::make()
+                ->label(trans('packages/shortcode::shortcode.form.background_image'))
+                ->when($defaultImage, fn (MediaImageFieldOption $option) => $option->defaultValue($defaultImage))
+                ->shared()
+        );
     }
 }

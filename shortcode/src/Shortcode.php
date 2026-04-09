@@ -101,10 +101,17 @@ class Shortcode
         }
 
         foreach ($attributes as $key => $attribute) {
+            $attribute = str_replace(["\r\n", "\n", "\r"], '{{NEWLINE}}', (string) $attribute);
+            $attribute = $this->escapeAttribute($attribute);
             $parsedAttributes .= ' ' . $key . '="' . $attribute . '"';
         }
 
         return '[' . $name . $parsedAttributes . ']' . $content . '[/' . $name . ']';
+    }
+
+    protected function escapeAttribute(string $value): string
+    {
+        return str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
     }
 
     public function getCompiler(): ShortcodeCompiler

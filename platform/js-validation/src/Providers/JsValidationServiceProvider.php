@@ -6,6 +6,7 @@ use Alphasky\Base\Supports\ServiceProvider;
 use Alphasky\Base\Traits\LoadAndPublishDataTrait;
 use Alphasky\JsValidation\Javascript\ValidatorHandler;
 use Alphasky\JsValidation\JsValidatorFactory;
+use Alphasky\JsValidation\RemoteValidationMiddleware;
 use Illuminate\Contracts\Http\Kernel;
 
 class JsValidationServiceProvider extends ServiceProvider
@@ -22,7 +23,9 @@ class JsValidationServiceProvider extends ServiceProvider
 
         $this->bootstrapValidator();
 
-    
+        if ($this->app['config']->get('core.js-validation.js-validation.disable_remote_validation') === false) {
+            $this->app[Kernel::class]->pushMiddleware(RemoteValidationMiddleware::class);
+        }
     }
 
     protected function bootstrapValidator(): void

@@ -13,7 +13,7 @@ Theme::registerRoutes(function (): void {
         ->middleware([
             'throttle:60,1',
             RequiresJsonRequestMiddleware::class,
-            ShortcodePerformanceMiddleware::class
+            ShortcodePerformanceMiddleware::class,
         ])
         ->withoutMiddleware(VerifyCsrfToken::class);
 });

@@ -50,7 +50,7 @@ export class Helpers {
         if (typeof jsonString === 'string') {
             let result
             try {
-                result = $.parseJSON(jsonString)
+                result = JSON.parse(jsonString)
             } catch (err) {
                 result = defaultValue
             }
@@ -90,25 +90,25 @@ export class Helpers {
     static addToRecent(id, isFolder = false) {
         // If id is not a number, return
         if (isNaN(parseInt(id))) {
-            return;
+            return
         }
 
         // Create minimal file data with just id and is_folder
         let fileData = {
             id: id,
-            is_folder: isFolder
-        };
+            is_folder: isFolder,
+        }
 
         // If isFolder is not explicitly provided, check if it's a folder by looking at the DOM
         if (!isFolder) {
             $('.js-media-list-title').each((index, el) => {
-                let $box = $(el);
-                let data = $box.data() || {};
+                let $box = $(el)
+                let data = $box.data() || {}
                 if (data.id == id) {
-                    fileData.is_folder = data.is_folder || false;
-                    return false; // Break the loop
+                    fileData.is_folder = data.is_folder || false
+                    return false // Break the loop
                 }
-            });
+            })
         }
 
         // Send the minimal file data to the server to store in recent items
@@ -116,7 +116,7 @@ export class Helpers {
             .make()
             .post(RV_MEDIA_URL.global_actions, {
                 action: 'add_recent',
-                item: fileData
+                item: fileData,
             })
             .then(({ data }) => {
                 // Update the local RecentItems array for the current session
@@ -129,8 +129,8 @@ export class Helpers {
                 }
             })
             .catch((error) => {
-                console.error('Error adding to recent items:', error);
-            });
+                console.error('Error adding to recent items:', error)
+            })
     }
 
     static getItems() {

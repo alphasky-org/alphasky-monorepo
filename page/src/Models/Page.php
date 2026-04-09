@@ -6,7 +6,9 @@ use Alphasky\ACL\Models\User;
 use Alphasky\Base\Casts\SafeContent;
 use Alphasky\Base\Enums\BaseStatusEnum;
 use Alphasky\Base\Models\BaseModel;
+use Alphasky\Page\Services\ShortcodeParserService;
 use Alphasky\Revision\RevisionableTrait;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Page extends BaseModel
@@ -50,5 +52,12 @@ class Page extends BaseModel
         static::creating(function (self $page): void {
             $page->user_id = $page->user_id ?: auth()->id();
         });
+    }
+
+    protected function content(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => ShortcodeParserService::removeVisualBuilderIds((string) $value),
+        );
     }
 }

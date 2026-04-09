@@ -7,6 +7,7 @@ use Alphasky\Page\Models\Page;
 use Alphasky\Shortcode\Facades\Shortcode;
 use Alphasky\Slug\Facades\SlugHelper;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 trait HasPageSeeder
 {
@@ -33,9 +34,55 @@ trait HasPageSeeder
         }
     }
 
+    /**
+     * Create pages with translations stored in pages_translations table.
+     *
+     * @param array $pages Array of page data, each with optional 'translations' key
+     */
+    protected function createPagesWithTranslations(array $pages): void
+    {
+        $userId = User::query()->value('id');
+
+        foreach ($pages as $pageData) {
+            $translations = $pageData['translations'] ?? [];
+            unset($pageData['translations']);
+
+            $pageData['user_id'] = $userId ?: 0;
+
+            $page = Page::query()->create(Arr::except($pageData, 'metadata'));
+
+            if (method_exists($this, 'createMetadata')) {
+                $this->createMetadata($page, $pageData);
+            }
+
+            SlugHelper::createSlug($page);
+
+            foreach ($translations as $locale => $translation) {
+                DB::table('pages_translations')->insert([
+                    'lang_code' => $locale,
+                    'pages_id' => $page->id,
+                    'name' => $translation['name'],
+                    'description' => $translation['description'] ?? null,
+                    'content' => $translation['content'] ?? null,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Truncate pages and their translations.
+     */
     protected function truncatePages(): void
     {
         Page::query()->truncate();
+    }
+
+    /**
+     * Truncate pages translations table.
+     */
+    protected function truncatePagesTranslations(): void
+    {
+        DB::table('pages_translations')->truncate();
     }
 
     protected function generateShortcodeContent(array $shortcodes): string
@@ -47,6 +94,6 @@ trait HasPageSeeder
                 Arr::get($shortcode, 'content')
             ),
             $shortcodes
-        )));
+        )), ENT_NOQUOTES, 'UTF-8');
     }
 }

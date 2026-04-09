@@ -1,4 +1,12 @@
-@props(['label', 'name' => null, 'checked' => false, 'label' => null, 'id' => null, 'single' => false, 'wrapperClass' => null])
+@props([
+    'label',
+    'name' => null,
+    'checked' => false,
+    'label' => null,
+    'id' => null,
+    'single' => false,
+    'wrapperClass' => null,
+])
 
 @php($id = $attributes->get('id', $name) ?? Str::random(8))
 

@@ -1,5 +1,5 @@
 @php
-    $model = (object)$options['model'];
+    $model = (object) $options['model'];
     $options['prefix'] = SlugHelper::getPrefix($model::class);
 @endphp
 
@@ -21,7 +21,8 @@
             $model->slug,
             $model->slug_id,
             $options['prefix'],
-            SlugHelper::canPreview($model) && in_array($model->status, [Alphasky\Base\Enums\BaseStatusEnum::DRAFT, Alphasky\Base\Enums\BaseStatusEnum::PENDING]),
+            SlugHelper::canPreview($model) &&
+                in_array($model->status, [Alphasky\Base\Enums\BaseStatusEnum::DRAFT, Alphasky\Base\Enums\BaseStatusEnum::PENDING]),
             [],
             true,
             $model,

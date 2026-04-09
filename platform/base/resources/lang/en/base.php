@@ -53,7 +53,7 @@ return [
     'panel' => [
         'others' => 'Others',
         'system' => 'System',
-        'platform_administration' => 'Administration',
+        'platform_administration' => 'Platform Administration',
         'manage_description' => 'Manage :name',
     ],
     'global_search' => [

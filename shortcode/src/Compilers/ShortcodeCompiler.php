@@ -44,7 +44,7 @@ class ShortcodeCompiler
 
     public function setEditLink(string $editLink, string $permission): void
     {
-        if ($permission && (! Auth::guard()->check() || ! Auth::guard()->user()->hasPermission($permission))) {
+        if ($permission && (! Auth::guard('web')->check() || ! Auth::guard('web')->user()->hasPermission($permission))) {
             return;
         }
 
@@ -94,17 +94,12 @@ class ShortcodeCompiler
 
     public function compile(string $value, bool $force = false): string
     {
-        // Only continue is shortcode have been registered
         if ((! $this->enabled || ! $this->hasShortcodes()) && ! $force) {
             return $value;
         }
 
-        // Set empty result
         $result = '';
 
-        // Here we will loop through all the tokens returned by the Zend lexer and
-        // parse each one into the corresponding valid PHP. We will then have this
-        // template as the correctly rendered PHP that can be rendered natively.
         foreach (token_get_all($value) as $token) {
             $result .= is_array($token) ? $this->parseToken($token) : $token;
         }
@@ -144,7 +139,7 @@ class ShortcodeCompiler
         $compiled = $this->compileShortcode($matches);
         $name = $compiled->getName();
 
-        if ($compiled->enable_lazy_loading === 'yes' && ! request()->expectsJson() && ! $this->shouldIgnoreLazyLoading($name)) {
+        if ($compiled->enable_lazy_loading === 'yes' && ! request()->expectsJson() && ! request()->has('visual_builder') && ! $this->shouldIgnoreLazyLoading($name)) {
             add_filter(THEME_FRONT_FOOTER, function (?string $html) {
                 return $html . view('packages/shortcode::partials.lazy-loading-script')->render();
             }, 120);
@@ -157,10 +152,13 @@ class ShortcodeCompiler
 
             $loadingView = static::getLoadingStateView($name);
 
+            $shortcodeId = $compiled->get('data-vb-id');
+
             return view($placeholderView, [
                 'name' => $name,
                 'attributes' => Arr::except($compiled->toArray(), 'enable_lazy_loading'),
                 'loadingView' => $loadingView,
+                'shortcodeId' => $shortcodeId,
             ]);
         }
 
@@ -184,6 +182,7 @@ class ShortcodeCompiler
         if (
             setting('shortcode_cache_enabled', false)
             && ! request()->expectsJson()
+            && ! request()->input('visual_builder')
             && ! $this->shouldIgnoreCache($name)
             && $compiled->enable_caching !== 'no'
             && empty(request()->getQueryString())
@@ -236,12 +235,9 @@ class ShortcodeCompiler
 
     protected function compileShortcode($matches): Shortcode
     {
-        // Set matches
         $this->setMatches($matches);
-        // pars the attributes
         $attributes = $this->parseAttributes($this->matches[3]);
 
-        // return shortcode instance
         return new Shortcode(
             $this->getName(),
             $attributes,
@@ -265,25 +261,16 @@ class ShortcodeCompiler
             return null;
         }
 
-        // Compile the content, to support nested shortcode
         return $this->compile($this->matches[5]);
     }
 
     public function getCallback(string $key): string|null|callable|array
     {
-        // Get the callback from the shortcode array
         $callback = $this->registered[$key]['callback'];
-        // if is a string
         if (is_string($callback)) {
-            // Parse the callback
             [$class, $method] = Str::parseCallback($callback, 'register');
-            // If the class exist
             if (class_exists($class)) {
-                // return class and method
-                return [
-                    app($class),
-                    $method,
-                ];
+                return [app($class), $method];
             }
         }
 
@@ -292,25 +279,25 @@ class ShortcodeCompiler
 
     protected function parseAttributes(?string $text): array
     {
-        // decode attribute values
         $text = htmlspecialchars_decode($text, ENT_QUOTES);
 
         $attributes = [];
-        // attributes pattern
-        $pattern = '/(\w+)\s*=\s*"([^"]*)"(?:\s|$)|(\w+)\s*=\s*\'([^\']*)\'(?:\s|$)|(\w+)\s*=\s*([^\s\'"]+)(?:\s|$)|"([^"]*)"(?:\s|$)|(\S+)(?:\s|$)/';
-        // Match
+
+        // Pattern handles escaped quotes: \" within double-quoted values and \' within single-quoted values
+        $pattern = '/(\w+)\s*=\s*"((?:[^"\\\\]|\\\\.)*)"\s*|(\w+)\s*=\s*\'((?:[^\'\\\\]|\\\\.)*)\'\s*|(\w+)\s*=\s*([^\s\'"]+)\s*|"((?:[^"\\\\]|\\\\.)*)"\s*|(\S+)\s*/';
+
         if (preg_match_all($pattern, preg_replace('/[\x{00a0}\x{200b}]+/u', ' ', $text), $match, PREG_SET_ORDER)) {
             foreach ($match as $item) {
                 if (! empty($item[1])) {
-                    $attributes[strtolower($item[1])] = stripcslashes($item[2]);
+                    $attributes[strtolower($item[1])] = $this->decodeAttributeValue($item[2]);
                 } elseif (! empty($item[3])) {
-                    $attributes[strtolower($item[3])] = stripcslashes($item[4]);
+                    $attributes[strtolower($item[3])] = $this->decodeAttributeValue($item[4]);
                 } elseif (! empty($item[5])) {
-                    $attributes[strtolower($item[5])] = stripcslashes($item[6]);
+                    $attributes[strtolower($item[5])] = $this->decodeAttributeValue($item[6]);
                 } elseif (isset($item[7]) && strlen($item[7])) {
-                    $attributes[] = stripcslashes($item[7]);
+                    $attributes[] = $this->decodeAttributeValue($item[7]);
                 } elseif (isset($item[8])) {
-                    $attributes[] = stripcslashes($item[8]);
+                    $attributes[] = $this->decodeAttributeValue($item[8]);
                 }
             }
         } else {
@@ -318,6 +305,17 @@ class ShortcodeCompiler
         }
 
         return is_array($attributes) ? $attributes : [$attributes];
+    }
+
+    protected function decodeAttributeValue(string $value): string
+    {
+        $value = stripcslashes($value);
+
+        return str_replace(
+            ['{{NEWLINE}}', '{{BR}}', '{{NBSP}}'],
+            ["\n", '<br>', '&nbsp;'],
+            $value
+        );
     }
 
     public function getShortcodeNames(array $except = []): string
@@ -438,5 +436,4 @@ class ShortcodeCompiler
     {
         return apply_filters('core_whitelist_shortcodes', ['media', 'youtube-video']);
     }
-
 }

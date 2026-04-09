@@ -32,6 +32,7 @@ class MarketplaceController extends BaseController
 
     public function index(): View
     {
+       
         $this->pageTitle(trans('packages/plugin-management::plugin.plugins_add_new'));
 
         Assets::usingVueJS()
@@ -57,6 +58,10 @@ class MarketplaceController extends BaseController
                 ->httpResponse()
                 ->setError()
                 ->setMessage($data['message']);
+        }
+
+        if (empty($data['data'])) {
+            return $data;
         }
 
         $coreVersion = get_core_version();

@@ -30,7 +30,10 @@
     :form-action="route('media.download_url')"
     :form-attrs="['id' => 'image-picker-add-from-url-form']"
 >
-    <input type="hidden" name="image-box-target">
+    <input
+        type="hidden"
+        name="image-box-target"
+    >
 
     <x-core::form.text-input
         :label="trans('core/media::media.url')"

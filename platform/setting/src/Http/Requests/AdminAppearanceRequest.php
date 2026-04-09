@@ -3,9 +3,9 @@
 namespace Alphasky\Setting\Http\Requests;
 
 use Alphasky\Base\Facades\AdminAppearance;
+use Alphasky\Base\Facades\AdminHelper;
 use Alphasky\Base\Facades\BaseHelper;
 use Alphasky\Base\Rules\GoogleFontsRule;
-use Alphasky\Base\Supports\Language;
 use Alphasky\Support\Http\Requests\Request;
 use Illuminate\Validation\Rule;
 
@@ -21,11 +21,13 @@ class AdminAppearanceRequest extends Request
             'login_screen_backgrounds' => ['nullable', 'array'],
             'login_screen_backgrounds*' => ['string', 'required'],
             'admin_title' => ['nullable', 'string', 'max:255'],
-            'admin_appearance_locale' => ['sometimes', 'required', Rule::in(array_keys(Language::getAvailableLocales()))],
+            'admin_appearance_locale' => ['sometimes', 'required', Rule::in(array_keys(AdminHelper::getAdminLocales()))],
             'admin_appearance_locale_direction' => ['required', 'in:ltr,rtl'],
             'rich_editor' => ['required', Rule::in(array_keys(BaseHelper::availableRichEditors()))],
+            'enable_page_visual_builder' => ['nullable', 'bool'],
             'admin_appearance_layout' => ['required', 'string', Rule::in(array_keys(AdminAppearance::getLayouts()))],
             'admin_appearance_show_menu_item_icon' => ['nullable', 'bool'],
+            'admin_appearance_show_get_started' => ['nullable', 'bool'],
             'admin_appearance_container_width' => ['required', 'string', Rule::in(array_keys(AdminAppearance::getContainerWidths()))],
             'admin_primary_font' => new GoogleFontsRule(),
             'admin_primary_color' => ['nullable', 'string'],

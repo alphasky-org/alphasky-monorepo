@@ -75,5 +75,13 @@ return [
         'automatic_generation' => 'Automatic Generation',
         'automatic_generation_desc' => 'Updates automatically when content changes',
         'automatic_update_note' => 'The sitemap updates automatically whenever you create, edit, or delete content on your website.',
+        'submit_sitemap' => 'Submit Sitemap to IndexNow',
+        'submitting_sitemap' => 'Submitting...',
+        'sitemap_submitted_successfully' => 'Sitemap submitted successfully to search engines!',
+        'sitemap_submission_failed' => 'Failed to submit sitemap to all search engines.',
+        'sitemap_submission_partial' => 'Sitemap submitted with some errors.',
+        'submit_sitemap_error' => 'Failed to submit sitemap. Please try again.',
+        'indexnow_disabled' => 'IndexNow is not enabled. Please enable it first.',
+        'indexnow_no_api_key' => 'No API key found. Please generate an API key first.',
     ],
 ];

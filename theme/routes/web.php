@@ -108,6 +108,7 @@ Route::group(['namespace' => 'Alphasky\Theme\Http\Controllers'], function (): vo
                     'as' => 'website-tracking.update',
                     'uses' => 'WebsiteTrackingSettingController@update',
                     'permission' => 'settings.website-tracking',
+                    'middleware' => 'preventDemo',
                 ]);
             });
         });

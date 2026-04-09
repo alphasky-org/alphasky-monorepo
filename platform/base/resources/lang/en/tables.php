@@ -60,10 +60,10 @@ return [
     'last_login' => 'Last login',
     'shortcode' => 'Shortcode',
     'image' => 'Image',
-    'signature' => 'Signature',
     'bulk_changes' => 'Bulk changes',
     'submit' => 'Submit',
     'please_select_record' => 'Please select at least one record to perform this action!',
     'checkbox' => 'Checkbox',
     'toggle_columns' => 'Toggle Columns',
+    'created_by' => 'Created By',
 ];

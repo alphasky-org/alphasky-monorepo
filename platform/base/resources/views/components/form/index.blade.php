@@ -3,5 +3,5 @@
      Assets::addStyles(['survey'])->addStylesDirectly('/vendor/core/core/base/css/survey.css');
 @endphp
 {!! Form::open($attributes->getAttributes()) !!}
-    {{ $slot }}
+{{ $slot }}
 {!! Form::close() !!}

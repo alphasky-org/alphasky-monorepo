@@ -31,7 +31,19 @@ class WidgetController extends BaseController
 
         RenderingWidgetSettings::dispatch();
 
-        $widgets = Widget::query()->where('theme', Widget::getThemeName())->get();
+        $themeName = Widget::getThemeName();
+        $widgets = Widget::query()->where('theme', $themeName)->orderBy('position')->get();
+
+        $isInheriting = false;
+
+        if ($widgets->isEmpty()) {
+            $defaultThemeName = Widget::getDefaultThemeName();
+
+            if ($defaultThemeName !== $themeName) {
+                $widgets = Widget::query()->where('theme', $defaultThemeName)->orderBy('position')->get();
+                $isInheriting = $widgets->isNotEmpty();
+            }
+        }
 
         $groups = WidgetGroup::getGroups();
         foreach ($widgets as $widget) {
@@ -44,7 +56,7 @@ class WidgetController extends BaseController
                 ->addWidget($widget->widget_id, $widget->data);
         }
 
-        return view('packages/widget::list');
+        return view('packages/widget::list', compact('isInheriting'));
     }
 
     public function update(Request $request)
@@ -79,7 +91,7 @@ class WidgetController extends BaseController
             $widgetAreas = Widget::query()->where([
                 'sidebar_id' => $sidebarId,
                 'theme' => $themeName,
-            ])->get();
+            ])->orderBy('position')->get();
 
             return $this
                 ->httpResponse()
@@ -91,6 +103,35 @@ class WidgetController extends BaseController
                 ->setError()
                 ->setMessage($exception->getMessage());
         }
+    }
+
+    public function getWidgetForm(Request $request)
+    {
+        $widgetId = $request->input('widget_id');
+        $sidebarId = $request->input('sidebar_id');
+
+        if (! $widgetId || ! class_exists($widgetId)) {
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setMessage(trans('packages/widget::widget.widget_not_found'));
+        }
+
+        $widget = new $widgetId();
+        $position = 0;
+
+        $formHtml = view('packages/widget::partials.widget-form', [
+            'widget' => $widget,
+            'sidebarId' => $sidebarId,
+            'position' => $position,
+        ])->render();
+
+        return $this
+            ->httpResponse()
+            ->setData([
+                'form' => $formHtml,
+                'widget_name' => $widget->getName(),
+            ]);
     }
 
     public function destroy(Request $request)
@@ -110,7 +151,7 @@ class WidgetController extends BaseController
             $widgetAreas = Widget::query()->where([
                 'sidebar_id' => $sidebarId,
                 'theme' => $themeName,
-            ])->get();
+            ])->orderBy('position')->get();
 
             return $this
                 ->httpResponse()

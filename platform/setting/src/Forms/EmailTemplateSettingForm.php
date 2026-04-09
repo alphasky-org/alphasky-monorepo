@@ -99,8 +99,8 @@ class EmailTemplateSettingForm extends SettingForm
                 'email_template_max_height_for_logo',
                 NumberField::class,
                 NumberFieldOption::make()
-                    ->label(__('Logo height (px)'))
-                    ->helperText(__('Set the height of the logo in pixels. The default value is :default.', ['default' => '40px']))
+                    ->label(trans('core/setting::setting.email.logo_height'))
+                    ->helperText(trans('core/setting::setting.email.logo_height_helper', ['default' => '40px']))
                     ->attributes([
                         'min' => 1,
                         'max' => 150,

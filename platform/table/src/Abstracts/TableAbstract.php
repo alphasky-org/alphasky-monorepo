@@ -259,7 +259,7 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
                 'search' => '',
                 'searchPlaceholder' => trans('core/table::table.search'),
                 'zeroRecords' => trans('core/base::tables.no_record'),
-                'processing' => Html::image('vendor/core/core/base/images/loading-spinner-blue.gif'),
+                'processing' => '',
                 'paginate' => [
                     'next' => trans('pagination.next'),
                     'previous' => trans('pagination.previous'),
@@ -382,7 +382,7 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
     }
 
     /**
-     * @param  BaseModel|class-string<BaseModel>  $model
+     * @param BaseModel|class-string<BaseModel> $model
      */
     public function model(BaseModelContract|string $model): static
     {
@@ -411,7 +411,7 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
         return $this;
     }
 
-    public function getModel(): BaseModelContract|Model
+    protected function getModel(): BaseModelContract|Model
     {
         return $this->model ?: ($this->repository ? $this->repository->getModel() : new BaseModel());
     }
@@ -670,15 +670,13 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
                 }
 
                 if (searchInputWrapper.val()) {
-                    searchInputWrapper.addClass('border-primary bg-info-subtle')
-
-                    searchInputWrapper.closest('label').find('.search-reset-icon').show()
-                    searchInputWrapper.closest('label').find('.search-icon').hide()
+                    searchInputWrapper.addClass('border-primary bg-info-subtle');
+                    searchInputWrapper.closest('label').find('.search-reset-icon').show();
+                    searchInputWrapper.closest('label').find('.search-icon').hide();
                 } else {
-                    searchInputWrapper.removeClass('border-primary bg-info-subtle')
-
-                    searchInputWrapper.closest('label').find('.search-reset-icon').hide()
-                    searchInputWrapper.closest('label').find('.search-icon').show()
+                    searchInputWrapper.removeClass('border-primary bg-info-subtle');
+                    searchInputWrapper.closest('label').find('.search-reset-icon').hide();
+                    searchInputWrapper.closest('label').find('.search-icon').show();
                 }
             }, 200);
         JS . $this->htmlInitCompleteFunction();

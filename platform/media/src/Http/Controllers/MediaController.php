@@ -904,6 +904,140 @@ class MediaController extends BaseController
         return $file;
     }
 
+    public function getFolderList(Request $request)
+    {
+        $parentId = $request->input('parent_id', 0);
+        $excludeIds = array_filter((array) $request->input('exclude_ids', []));
+
+        $allExcludeIds = $this->getAllDescendantFolderIds($excludeIds);
+
+        $query = MediaFolder::query()
+            ->where(function ($q) use ($parentId): void {
+                if (! $parentId || $parentId === '0') {
+                    $q->whereNull('parent_id')
+                        ->orWhere('parent_id', 0)
+                        ->orWhere('parent_id', '0');
+                } else {
+                    $q->where('parent_id', $parentId);
+                }
+            })
+            ->whereNotIn('id', $allExcludeIds);
+
+        $folders = $query->orderBy('name')
+            ->get(['id', 'name', 'parent_id'])
+            ->map(function ($folder) use ($allExcludeIds) {
+                return [
+                    'id' => $folder->id,
+                    'name' => $folder->name,
+                    'parent_id' => $folder->parent_id,
+                    'has_children' => MediaFolder::query()
+                        ->where('parent_id', $folder->id)
+                        ->whereNotIn('id', $allExcludeIds)
+                        ->exists(),
+                ];
+            });
+
+        $currentFolder = $parentId
+            ? MediaFolder::query()->find($parentId, ['id', 'name', 'parent_id'])
+            : null;
+
+        $breadcrumbs = $this->buildFolderBreadcrumbs($parentId);
+
+        return RvMedia::responseSuccess([
+            'current_folder' => $currentFolder ? [
+                'id' => $currentFolder->id,
+                'name' => $currentFolder->name,
+                'parent_id' => $currentFolder->parent_id,
+            ] : ['id' => 0, 'name' => trans('core/media::media.root'), 'parent_id' => null],
+            'folders' => $folders,
+            'breadcrumbs' => $breadcrumbs,
+        ]);
+    }
+
+    protected function getAllDescendantFolderIds(array $folderIds): array
+    {
+        if (empty($folderIds)) {
+            return [];
+        }
+
+        $allIds = $folderIds;
+        $childIds = MediaFolder::query()
+            ->whereIn('parent_id', $allIds)
+            ->pluck('id')
+            ->toArray();
+
+        if (! empty($childIds)) {
+            $allIds = array_merge($allIds, $this->getAllDescendantFolderIds($childIds));
+        }
+
+        return array_unique($allIds);
+    }
+
+    protected function buildFolderBreadcrumbs(int|string $folderId): array
+    {
+        $breadcrumbs = [['id' => 0, 'name' => trans('core/media::media.root')]];
+
+        if (! $folderId) {
+            return $breadcrumbs;
+        }
+
+        $folder = MediaFolder::query()->find($folderId);
+        $path = [];
+
+        while ($folder) {
+            array_unshift($path, ['id' => $folder->id, 'name' => $folder->name]);
+            $folder = $folder->parent_id
+                ? MediaFolder::query()->find($folder->parent_id)
+                : null;
+        }
+
+        return array_merge($breadcrumbs, $path);
+    }
+
+    public function getFolderTree(Request $request)
+    {
+        $excludeIds = array_filter((array) $request->input('exclude_ids', []));
+        $allExcludeIds = $this->getAllDescendantFolderIds($excludeIds);
+
+        $folders = MediaFolder::query()
+            ->whereNotIn('id', $allExcludeIds)
+            ->orderBy('name')
+            ->get(['id', 'name', 'parent_id']);
+
+        $tree = $this->buildFolderTree($folders, null, $allExcludeIds);
+
+        return RvMedia::responseSuccess([
+            'tree' => $tree,
+        ]);
+    }
+
+    protected function buildFolderTree($folders, $parentId = null, array $excludeIds = []): array
+    {
+        $tree = [];
+
+        $children = $folders->filter(function ($folder) use ($parentId) {
+            if ($parentId === null) {
+                return $folder->parent_id === null || $folder->parent_id === 0 || $folder->parent_id === '0';
+            }
+
+            return $folder->parent_id == $parentId;
+        });
+
+        foreach ($children as $folder) {
+            $childTree = $this->buildFolderTree($folders, $folder->id, $excludeIds);
+
+            $tree[] = [
+                'id' => $folder->id,
+                'name' => $folder->name,
+                'parent_id' => $folder->parent_id,
+                'children' => $childTree,
+                'has_children' => count($childTree) > 0,
+            ];
+        }
+
+        return $tree;
+    }
+
     public function download(Request $request)
     {
         $items = $request->input('selected', []);
@@ -928,10 +1062,13 @@ class MediaController extends BaseController
                                 $zip->add($filePath);
                             }
                         } else {
-                            $zip->addString(
-                                File::basename($file),
-                                Http::withoutVerifying()->get($filePath)->body()
-                            );
+                            try {
+                                $fileContent = Storage::get($file->url);
+                            } catch (Throwable $exception) {
+                                $fileContent = Http::withoutVerifying()->get($filePath)->body();
+                            }
+
+                            $zip->addString(File::basename($file->url), $fileContent);
                         }
                     }
                 } else {
@@ -945,10 +1082,13 @@ class MediaController extends BaseController
                         } else {
                             $allFiles = Storage::allFiles($this->folderRepository->getFullPath($folder->id));
                             foreach ($allFiles as $file) {
-                                $zip->addString(
-                                    File::basename($file),
-                                    Http::withoutVerifying()->get(RvMedia::getRealPath($file))->body()
-                                );
+                                try {
+                                    $fileContent = Storage::get($file);
+                                } catch (Throwable $exception) {
+                                    $fileContent = Http::withoutVerifying()->get(RvMedia::getRealPath($file))->body();
+                                }
+
+                                $zip->addString(File::basename($file), $fileContent);
                             }
                         }
                     }

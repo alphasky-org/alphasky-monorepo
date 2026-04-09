@@ -30,7 +30,10 @@
     @if ($icon)
         <div class="d-flex gap-1">
             <div>
-                <x-core::icon :name="$icon" class="alert-icon" />
+                <x-core::icon
+                    :name="$icon"
+                    class="alert-icon"
+                />
             </div>
             <div class="w-100">
     @endif
@@ -42,8 +45,8 @@
     {{ $slot }}
 
     @if ($icon)
-        </div>
-    </div>
+</div>
+</div>
 @endif
 
 @if ($dismissible)

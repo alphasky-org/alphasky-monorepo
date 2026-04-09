@@ -8,16 +8,16 @@ $(() => {
 
         let $section = $this.closest('.shortcode-tabs-field-wrapper')
 
-        if (! $section.length) {
+        if (!$section.length) {
             $section = $this.closest('.shortcode-admin-config')
         }
 
-        $section.find('.shortcode-template').first().clone().removeClass('shortcode-template');
+        $section.find('.shortcode-template').first().clone().removeClass('shortcode-template')
 
         for (let index = 1; index <= $this.data('max'); index++) {
             const $el = key ? $section.find(`[data-tab-id=${key}_${index}]`) : $section.find(`[data-tab-id=${index}]`)
             if (index <= quantity) {
-                if (! $el.is(':visible')) {
+                if (!$el.is(':visible')) {
                     $el.slideDown()
                     $el.find('[data-name]').map((i, e) => $(e).prop('name', $(e).data('name')))
                 }

@@ -1,10 +1,13 @@
 {!! SeoHelper::render() !!}
+<link
+    rel="sitemap"
+    title="Sitemap"
+    href="{{ rescue(fn() => route('public.sitemap'), report: false) }}"
+    type="application/xml"
+>
 
 @if ($favicon = theme_option('favicon'))
-    {{ Html::favicon(
-        RvMedia::getImageUrl($favicon),
-        ['type' => theme_option('favicon_type', 'image/x-icon')]
-    ) }}
+    {{ Html::favicon(RvMedia::getImageUrl($favicon), ['type' => theme_option('favicon_type', 'image/x-icon')]) }}
 @endif
 
 @if (Theme::has('headerMeta'))

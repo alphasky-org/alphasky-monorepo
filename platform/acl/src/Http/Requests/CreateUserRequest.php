@@ -4,12 +4,20 @@ namespace Alphasky\ACL\Http\Requests;
 
 use Alphasky\ACL\Models\User;
 use Alphasky\Base\Facades\BaseHelper;
+use Alphasky\Base\Http\Requests\Concerns\HasPhoneFieldValidation;
 use Alphasky\Base\Rules\EmailRule;
 use Alphasky\Support\Http\Requests\Request;
 use Illuminate\Validation\Rule;
 
 class CreateUserRequest extends Request
 {
+    use HasPhoneFieldValidation;
+
+    protected function prepareForValidation(): void
+    {
+        $this->preparePhoneForValidation();
+    }
+
     public function rules(): array
     {
         return [

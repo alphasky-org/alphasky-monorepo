@@ -29,6 +29,7 @@ class MarketplaceService
 
     public function __construct(?string $url = null, ?string $token = null)
     {
+        
         $core = Core::make()->getCoreFileData();
 
         $this->url = $url ?? $core['marketplaceUrl'];

@@ -229,6 +229,10 @@ class MediaFile extends BaseModel
     protected function indirectUrl(): Attribute
     {
         return Attribute::get(function () {
+            if (! $this->getKey()) {
+                return null;
+            }
+
             $id = static::isUsingStringId()
                 ? $this->getKey()
                 : dechex((int) $this->getKey());

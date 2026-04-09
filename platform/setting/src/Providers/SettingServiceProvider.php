@@ -22,13 +22,12 @@ use Alphasky\Setting\Repositories\Interfaces\SettingInterface;
 use Alphasky\Setting\Supports\DatabaseSettingStore;
 use Alphasky\Setting\Supports\SettingStore;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Foundation\AliasLoader;
 
-class SettingServiceProvider extends ServiceProvider
+class SettingServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     use LoadAndPublishDataTrait;
-
-    protected bool $defer = true;
 
     public function register(): void
     {
@@ -58,7 +57,8 @@ class SettingServiceProvider extends ServiceProvider
             ->loadAndPublishViews()
             ->loadAnonymousComponents()
             ->loadAndPublishTranslations()
-            ->loadAndPublishConfigurations(['permissions', 'email'])
+            ->loadAndPublishConfigurations(['email'])
+            ->loadAndPublishConfigurations(['permissions'])
             ->loadMigrations()
             ->publishAssets();
 
@@ -94,9 +94,9 @@ class SettingServiceProvider extends ServiceProvider
             PanelSectionManager::registerItem(
                 SystemPanelSection::class,
                 fn () => PanelSectionItem::make('cronjob')
-                    ->setTitle(trans('core/setting::setting.cronjob.name'))
+                    ->setTitle(trans('core/setting::cronjob.name'))
                     ->withIcon('ti ti-calendar-event')
-                    ->withDescription(trans('core/setting::setting.cronjob.description'))
+                    ->withDescription(trans('core/setting::cronjob.description'))
                     ->withPriority(50)
                     ->withRoute('system.cronjob')
             );

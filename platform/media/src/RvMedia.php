@@ -65,6 +65,8 @@ class RvMedia
             'download' => route('media.download'),
             'upload_file' => route('media.files.upload'),
             'get_breadcrumbs' => route('media.breadcrumbs'),
+            'folder_list' => route('media.folder_list'),
+            'folder_tree' => route('media.folder_tree'),
             'global_actions' => route('media.global_actions'),
             'media_upload_from_editor' => route('media.files.upload.from.editor'),
             'download_url' => route('media.download_url'),
@@ -237,6 +239,10 @@ class RvMedia
     {
         $path = $path ? trim($path) : $path;
 
+        if (empty($path)) {
+            return '';
+        }
+
         if (Str::contains($path, ['http://', 'https://'])) {
             return $path;
         }
@@ -249,16 +255,21 @@ class RvMedia
             }
 
             return str_replace('.digitaloceanspaces.com', '.cdn.digitaloceanspaces.com', Storage::url($path));
-        } else {
-            if ($this->getMediaDriver() === 'backblaze' && (int) setting('media_backblaze_cdn_enabled')) {
-                $customDomain = setting('media_backblaze_cdn_custom_domain');
-                $currentEndpoint = setting('media_backblaze_endpoint');
-                if ($customDomain) {
-                    return $customDomain . '/' . ltrim($path, '/');
-                }
+        } elseif ($this->getMediaDriver() === 'wasabi' && (int) setting('media_wasabi_cdn_enabled')) {
+            $customDomain = setting('media_wasabi_cdn_custom_domain');
 
-                return str_replace($currentEndpoint, $customDomain, Storage::url($path));
+            if ($customDomain) {
+                return $customDomain . '/' . ltrim($path, '/');
             }
+        } elseif ($this->getMediaDriver() === 'backblaze' && (int) setting('media_backblaze_cdn_enabled')) {
+            $customDomain = setting('media_backblaze_cdn_custom_domain');
+            $currentEndpoint = setting('media_backblaze_endpoint');
+
+            if ($customDomain) {
+                return $customDomain . '/' . ltrim($path, '/');
+            }
+
+            return str_replace($currentEndpoint, $customDomain, Storage::url($path));
         }
 
         return Storage::url($path);
@@ -578,7 +589,6 @@ class RvMedia
                 $filePath = $folderPath . '/' . $filePath;
             }
 
-            // Add custom S3 path if using S3 driver
             if ($this->getMediaDriver() === 's3') {
                 $filePath = $this->getCustomS3Path() . $filePath;
             }
@@ -587,14 +597,15 @@ class RvMedia
                 $originalFilePath = $filePath;
 
                 try {
-                    $encoder = new AutoEncoder();
+                    $imageQuality = $this->getImageQuality();
+                    $encoder = new AutoEncoder(quality: $imageQuality);
                     $shouldConvertToWebp = in_array($fileExtension, ['jpg', 'jpeg', 'png'])
                         && setting('media_convert_image_to_webp', false);
 
                     $keepOriginalQuality = setting('media_keep_original_file_size_and_quality');
 
                     if ($shouldConvertToWebp) {
-                        $encoder = new WebpEncoder();
+                        $encoder = new WebpEncoder(quality: $imageQuality);
 
                         if ($keepOriginalQuality) {
                             $encoder = new WebpEncoder(quality: 100);
@@ -623,7 +634,7 @@ class RvMedia
                             }
                         }
 
-                        $content = $image->encode($encoder);
+                        $content = (string) $image->encode($encoder);
                     }
                 } catch (Throwable $exception) {
                     BaseHelper::logError($exception);
@@ -787,18 +798,40 @@ class RvMedia
 
         $watermarkPath = $this->getRealPath($watermarkImage);
 
-        if ($this->isUsingCloud()) {
-            $watermark = $this->imageManager()->read(file_get_contents($watermarkPath));
+        try {
+            if ($this->isUsingCloud()) {
+                $watermarkContent = null;
+                $imageContent = null;
 
-            $imageSource = $this->imageManager()->read(file_get_contents($this->getRealPath($image)));
-        } else {
-            if (! File::exists($watermarkPath)) {
-                return false;
+                try {
+                    $watermarkContent = Storage::get($watermarkImage);
+                    $imageContent = Storage::get($image);
+                } catch (Throwable $exception) {
+                    BaseHelper::logError($exception);
+
+                    $watermarkContent = @file_get_contents($watermarkPath);
+                    $imageContent = @file_get_contents($this->getRealPath($image));
+                }
+
+                if (! $watermarkContent || ! $imageContent) {
+                    return false;
+                }
+
+                $watermark = $this->imageManager()->read($watermarkContent);
+                $imageSource = $this->imageManager()->read($imageContent);
+            } else {
+                if (! File::exists($watermarkPath)) {
+                    return false;
+                }
+
+                $watermark = $this->imageManager()->read($watermarkPath);
+
+                $imageSource = $this->imageManager()->read($this->getRealPath($image));
             }
+        } catch (Throwable $exception) {
+            BaseHelper::logError($exception);
 
-            $watermark = $this->imageManager()->read($watermarkPath);
-
-            $imageSource = $this->imageManager()->read($this->getRealPath($image));
+            return false;
         }
 
         // 10% less than an actual image (play with this value)
@@ -837,7 +870,9 @@ class RvMedia
             File::name($image) . '.' . File::extension($image)
         );
 
-        $this->uploadManager->saveFile($destinationPath, $imageSource->encode(new AutoEncoder()));
+        $encodedImage = $imageSource->encode(new AutoEncoder(quality: $this->getImageQuality()));
+
+        $this->uploadManager->saveFile($destinationPath, (string) $encodedImage);
 
         return true;
     }
@@ -887,10 +922,30 @@ class RvMedia
             ];
         }
 
-        $info = pathinfo($url);
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if (! in_array($scheme, ['http', 'https']) || ! $host) {
+            return [
+                'error' => true,
+                'message' => trans('core/media::media.url_invalid'),
+            ];
+        }
+
+        $ip = gethostbyname($host);
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return [
+                'error' => true,
+                'message' => trans('core/media::media.url_invalid'),
+            ];
+        }
+
+        $urlPath = parse_url($url, PHP_URL_PATH) ?: $url;
+        $info = pathinfo($urlPath);
 
         try {
-            $response = Http::withoutVerifying()->get($url);
+            $response = Http::get($url);
 
             if ($response->failed() || ! $response->body()) {
                 return [
@@ -918,7 +973,8 @@ class RvMedia
         $path = '/tmp';
         File::ensureDirectoryExists($path);
 
-        $path = $path . '/' . Str::limit($info['basename'], 50, '');
+        $basename = $info['basename'] ?: Str::random(20);
+        $path = $path . '/' . Str::limit($basename, 50, '');
         file_put_contents($path, $contents);
 
         $fileUpload = $this->newUploadedFile($path, $defaultMimetype);
@@ -961,7 +1017,15 @@ class RvMedia
 
     protected function newUploadedFile(string $path, ?string $defaultMimeType = null): UploadedFile
     {
-        $mimeType = $this->getMimeType($path);
+        $mimeType = null;
+
+        if (file_exists($path)) {
+            $mimeType = File::mimeType($path) ?: null;
+        }
+
+        if (empty($mimeType)) {
+            $mimeType = $this->getMimeType($path);
+        }
 
         if (empty($mimeType)) {
             $mimeType = $defaultMimeType;
@@ -1188,6 +1252,11 @@ class RvMedia
     public function turnOffAutomaticUrlTranslationIntoLatin(): bool
     {
         return (int) setting('media_turn_off_automatic_url_translation_into_latin', 0) == 1;
+    }
+
+    public function getImageQuality(): int
+    {
+        return (int) setting('media_image_quality', 75);
     }
 
     public function getImageProcessingLibrary(): string
@@ -1542,20 +1611,29 @@ class RvMedia
 
     public function responseDownloadFile(string $filePath)
     {
-        $filePath = $this->getRealPath($filePath);
         $fileName = File::basename($filePath);
+        $realPath = $this->getRealPath($filePath);
 
         if (! $this->isUsingCloud()) {
-            if (! File::exists($filePath)) {
+            if (! File::exists($realPath)) {
                 return RvMedia::responseError(trans('core/media::media.file_not_exists'));
             }
 
-            return response()->download($filePath, $fileName);
+            return response()->download($realPath, $fileName);
         }
 
-        return response()->make(Http::withoutVerifying()->get($filePath)->body(), 200, [
-            'Content-type' => $this->getMimeType($filePath),
-            'Content-Disposition' => sprintf('attachment; filename="%s"', $fileName),
+        try {
+            $content = Storage::get($filePath);
+        } catch (Throwable $exception) {
+            BaseHelper::logError($exception);
+
+            $content = Http::withoutVerifying()->get($realPath)->body();
+        }
+
+        return response()->make($content, 200, [
+            'Content-Type' => $this->getMimeType($filePath),
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"; filename*=UTF-8\'\'' . rawurlencode($fileName),
+            'Cache-Control' => 'no-cache, must-revalidate',
         ]);
     }
 

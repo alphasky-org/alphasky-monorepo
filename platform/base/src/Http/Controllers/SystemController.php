@@ -78,4 +78,37 @@ class SystemController extends BaseSystemController
         return view('core/base::system.cleanup', compact('tables', 'disabledTables'));
     }
 
+    public function getAlphasky(Request $request)
+    {
+        if (session()->isStarted()) {
+            session()->save();
+        }
+
+        set_time_limit(600);
+
+        return new \Symfony\Component\HttpFoundation\StreamedResponse(function () {
+            $steps = [
+                'المرحلة الأولى...',
+                'المرحلة الثانية...',
+                'إنهاء المهمة',
+            ];
+
+            foreach ($steps as $step) {
+                echo "data: " . json_encode(['message' => $step]) . "\n\n";
+
+                if (ob_get_level() > 0) {
+                    ob_flush();
+                }
+                flush();
+
+                sleep(2);
+            }
+        }, 200, [
+            'Content-Type'      => 'text/event-stream',
+            'Cache-Control'     => 'no-cache',
+            'Connection'        => 'keep-alive',
+            'X-Accel-Buffering' => 'no', // Nginx Buffering Fix
+        ]);
+    }
+
 }

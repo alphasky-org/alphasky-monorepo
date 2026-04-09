@@ -4,6 +4,7 @@ namespace Alphasky\Shortcode\Compilers;
 
 use Alphasky\Base\Facades\Html;
 use Alphasky\Media\Facades\RvMedia;
+use Illuminate\Support\Arr;
 
 class Shortcode
 {
@@ -52,13 +53,21 @@ class Shortcode
         return $this->attributes[$param] ?? null;
     }
 
-    public function htmlAttributes(): string
+    public function htmlAttributes(array $mergeAttributes = []): string
     {
         $attributes = [
             'data-block-id' => $this->name,
         ];
 
         $styles = [];
+
+        foreach (Arr::get($mergeAttributes, 'style', []) as $key => $value) {
+            if (is_string($key) && $value) {
+                $styles[] = rtrim($key, ';') . ';';
+            } elseif (is_int($key) && $value) {
+                $styles[] = rtrim($value, ';') . ';';
+            }
+        }
 
         if ($this->background_color) {
             $variable = '--block-' . $this->name . '-background-color';

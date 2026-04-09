@@ -2,11 +2,9 @@
     use Illuminate\Support\Arr;
 @endphp
 
-@if (
-    isset($options['choices'])
-    && (is_array($options['choices']) || $options['choices'] instanceof \Illuminate\Support\Collection)
-)
-    @if (count($options['choices']) < (Arr::get($options, 'switch_to_dropdown_threshold', 50)))
+@if (isset($options['choices']) &&
+        (is_array($options['choices']) || $options['choices'] instanceof \Illuminate\Support\Collection))
+    @if (count($options['choices']) < Arr::get($options, 'switch_to_dropdown_threshold', 50))
         <div class="mb-3">
             <div class="input-icon">
                 <input
@@ -18,12 +16,15 @@
                     formnovalidate
                 />
                 <span class="input-icon-addon">
-                  <x-core::icon name="ti ti-search" />
+                    <x-core::icon name="ti ti-search" />
                 </span>
             </div>
         </div>
 
-        <div data-bb-toggle="tree-checkboxes" class="tree-categories-list-{{ $inputSearchId }}">
+        <div
+            data-bb-toggle="tree-checkboxes"
+            class="tree-categories-list-{{ $inputSearchId }}"
+        >
             @include('core/base::forms.partials.tree-categories-checkbox-options', [
                 'categories' => $options['choices'],
                 'selected' => $options['selected'],

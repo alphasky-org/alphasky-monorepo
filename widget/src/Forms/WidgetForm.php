@@ -46,16 +46,12 @@ class WidgetForm extends FormAbstract
                 'enable_caching',
                 SelectField::class,
                 SelectFieldOption::make()
-                    ->label(__('Enable caching'))
+                    ->label(trans('packages/widget::widget.form.enable_caching'))
                     ->choices([
-                        'yes' => __('Yes'),
-                        'no' => __('No'),
+                        'yes' => trans('packages/widget::widget.form.yes'),
+                        'no' => trans('packages/widget::widget.form.no'),
                     ])
-                    ->helperText(
-                        __(
-                            'When enabled, this widget content will be cached to improve performance. Disable for dynamic content that changes frequently.'
-                        )
-                    )
+                    ->helperText(trans('packages/widget::widget.form.cache_helper'))
             );
 
         return $this;
@@ -71,11 +67,7 @@ class WidgetForm extends FormAbstract
                     AlertField::class,
                     AlertFieldOption::make()
                         ->type('warning')
-                        ->content(
-                            __(
-                                'Due to UI issues, cache for this widget is disabled via code. This widget will not be cached even if caching is enabled.'
-                            )
-                        )
+                        ->content(trans('packages/widget::widget.form.cache_warning'))
                 );
         }
 

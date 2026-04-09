@@ -176,7 +176,9 @@ class SeoOpenGraph implements SeoOpenGraphContract
         if (! $this->hasImage()) {
             $ogImage = theme_option('seo_og_image') ?: Theme::getLogo();
 
-            $this->setImage(RvMedia::url($ogImage));
+            if ($ogImage) {
+                $this->setImage(RvMedia::url($ogImage));
+            }
         }
 
         return $this->openGraph->render();

@@ -34,7 +34,12 @@
         "btn-ghost-$color" => $ghost && $color,
     ]);
 
-    $spinnerClasses = Arr::toCssClasses(['spinner-border', 'spinner-border-sm', 'me-2' => $iconPosition === 'left', 'ms-2' => $iconPosition === 'right']);
+    $spinnerClasses = Arr::toCssClasses([
+        'spinner-border',
+        'spinner-border-sm',
+        'me-2' => $iconPosition === 'left',
+        'ms-2' => $iconPosition === 'right',
+    ]);
 @endphp
 
 <{{ $tag }}
@@ -83,4 +88,4 @@
             />
         @endif
     @endif
-</{{ $tag }}>
+    </{{ $tag }}>

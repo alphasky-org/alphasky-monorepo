@@ -3,7 +3,6 @@
 namespace Alphasky\Theme;
 
 use Alphasky\Base\Facades\BaseHelper;
-use Alphasky\Theme\Facades\Theme as ThemeFacade;
 use Alphasky\Theme\Services\ThemeService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -49,10 +48,11 @@ class Manager
     protected function loadThemesFromFileSystem(): array
     {
         $themes = [];
+
         foreach (BaseHelper::scanFolder(theme_path()) as $folder) {
             $jsonFile = $this->getThemeJsonPath($folder);
 
-            $publicJsonFile = public_path('themes/' . ThemeFacade::getPublicThemeName() . '/theme.json');
+            $publicJsonFile = public_path('themes/' . $folder . '/theme.json');
 
             if (File::exists($publicJsonFile)) {
                 $jsonFile = $publicJsonFile;

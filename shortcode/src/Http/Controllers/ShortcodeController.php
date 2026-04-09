@@ -32,8 +32,17 @@ class ShortcodeController extends BaseController
 
         if ($code = $request->input('code')) {
             $compiler = shortcode()->getCompiler();
-            $attributes = $compiler->getAttributes(html_entity_decode($code));
+
+            $processedCode = $this->protectHtmlInAttributes($code);
+            $attributes = $compiler->getAttributes(html_entity_decode($processedCode));
             $content = $compiler->getContent();
+            $attributes = $this->restoreHtmlInAttributes($attributes);
+        } else {
+            $attributes = $request->except(['_token', 'key', 'code']);
+            if (isset($attributes['content'])) {
+                $content = $attributes['content'];
+                unset($attributes['content']);
+            }
         }
 
         if ($data instanceof Closure || is_callable($data)) {
@@ -74,6 +83,12 @@ class ShortcodeController extends BaseController
         }
 
         $attributes = $request->input('attributes', []);
+        $shortcodeId = $request->input('shortcodeId');
+
+        if ($shortcodeId) {
+            $attributes['data-vb-id'] = $shortcodeId;
+            $request->merge(['shortcodeId' => $shortcodeId]);
+        }
 
         // Create a cache key based on the shortcode name, attributes, and current locale
         $locale = app()->getLocale();
@@ -97,6 +112,13 @@ class ShortcodeController extends BaseController
         $cacheDuration = $cacheable
             ? Carbon::now()->addSeconds($cacheableTtl)
             : Carbon::now()->addSeconds($defaultTtl);
+
+        if ($shortcodeId || request()->input('visual_builder')) {
+            $code = Shortcode::generateShortcode($name, $attributes);
+            $content = Shortcode::compile($code, true)->toHtml();
+
+            return $this->httpResponse()->setData($content);
+        }
 
         $content = Cache::remember($cacheKey, $cacheDuration, function () use ($name, $attributes) {
             $code = Shortcode::generateShortcode($name, $attributes);
@@ -124,5 +146,37 @@ class ShortcodeController extends BaseController
         ];
 
         return in_array($name, $cacheableShortcodes);
+    }
+
+    protected function protectHtmlInAttributes(string $code): string
+    {
+        return preg_replace_callback(
+            '/(\w+)="([^"]*)"/',
+            function ($matches) {
+                $name = $matches[1];
+                $value = $matches[2];
+
+                $value = preg_replace('/<br[^>]*\/?>/i', '{{BR}}', $value);
+                $value = str_replace('&nbsp;', '{{NBSP}}', $value);
+
+                return $name . '="' . $value . '"';
+            },
+            $code
+        );
+    }
+
+    protected function restoreHtmlInAttributes(array $attributes): array
+    {
+        foreach ($attributes as $key => $value) {
+            if (is_string($value)) {
+                $attributes[$key] = str_replace(
+                    ['{{BR}}', '{{NBSP}}', '{{NEWLINE}}'],
+                    ['<br>', '&nbsp;', "\n"],
+                    $value
+                );
+            }
+        }
+
+        return $attributes;
     }
 }

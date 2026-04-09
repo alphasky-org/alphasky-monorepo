@@ -2,7 +2,7 @@
     'name',
     'value',
     'defaultImage' => RvMedia::getDefaultImage(),
-    'allowAddFromUrl' => $isInAdmin = is_in_admin(true) && auth()->guard()->check(),
+    'allowAddFromUrl' => ($isInAdmin = is_in_admin(true) && auth()->guard()->check()),
 ])
 
 @php
@@ -21,7 +21,7 @@
         {{ $attributes->except('action') }}
     />
 
-    @if (! $isInAdmin)
+    @if (!$isInAdmin)
         @php
             $name = str_replace(['[', ']'], ['___', ''], $name);
         @endphp
@@ -40,7 +40,7 @@
         style="width: 8rem"
         @class([
             'preview-image-wrapper mb-1',
-            'preview-image-wrapper-not-allow-thumb' => ! $allowThumb
+            'preview-image-wrapper-not-allow-thumb' => !$allowThumb,
         ])
     >
         <div class="preview-image-inner">
@@ -85,7 +85,7 @@
         {{ trans('core/base::forms.choose_image') }}
     </a>
 
-    @if($allowAddFromUrl)
+    @if ($allowAddFromUrl)
         <div data-bb-toggle="upload-from-url">
             <span class="text-muted">{{ trans('core/media::media.or') }}</span>
             <a

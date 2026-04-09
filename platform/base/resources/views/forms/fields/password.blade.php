@@ -15,8 +15,21 @@
     </x-slot:label>
 
     <div class="input-group">
-        <input type="password" name="{{ $name }}" id="{{ $name }}" value="{{ $options['value'] }}" {!! Html::attributes($options['attr']) !!} data-bb-password>
-        <span class="input-password-toggle" data-bb-toggle-password>
+        <input
+            type="password"
+            name="{{ $name }}"
+            id="{{ $name }}"
+            {!! Html::attributes($options['attr']) !!}
+            autocomplete="new-password"
+            @if (!empty($options['value']) && BaseHelper::hasDemoModeEnabled())
+                value="{{ $options['value'] }}"
+            @endif
+            data-bb-password
+        >
+        <span
+            class="input-password-toggle"
+            data-bb-toggle-password
+        >
             <x-core::icon name="ti ti-eye" />
         </span>
     </div>

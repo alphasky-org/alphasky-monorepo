@@ -150,7 +150,7 @@ trait HasBulkActions
         if (! $bulkAction) {
             return (new BaseHttpResponse())
                 ->setError()
-                ->setMessage(trans('core/table::invalid_bulk_action'));
+                ->setMessage(trans('core/table::table.invalid_bulk_action'));
         }
 
         if (empty($ids)) {

@@ -5,21 +5,18 @@ namespace Alphasky\ACL\Forms;
 use Alphasky\ACL\Http\Requests\PreferenceRequest;
 use Alphasky\ACL\Models\User;
 use Alphasky\Base\Facades\AdminAppearance;
+use Alphasky\Base\Facades\AdminHelper;
 use Alphasky\Base\Forms\FieldOptions\RadioFieldOption;
 use Alphasky\Base\Forms\FieldOptions\SelectFieldOption;
 use Alphasky\Base\Forms\Fields\RadioField;
 use Alphasky\Base\Forms\Fields\SelectField;
 use Alphasky\Base\Forms\FormAbstract;
-use Alphasky\Base\Supports\Language;
 
 class PreferenceForm extends FormAbstract
 {
     public function setup(): void
     {
-        $languages = collect(Language::getAvailableLocales())
-            ->pluck('name', 'locale')
-            ->map(fn ($item, $key) => $item . ' - ' . $key)
-            ->all();
+        $languages = AdminHelper::getAdminLocales();
 
         /**
          * @var User $user

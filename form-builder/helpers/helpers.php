@@ -2,6 +2,7 @@
 
 use Kris\LaravelFormBuilder\Fields\FormField;
 use Kris\LaravelFormBuilder\Form;
+use Alphasky\Base\Supports\Language;
 
 if (! function_exists('getFormBuilderViewPath')) {
     function getFormBuilderViewPath(string $fileName): string
@@ -140,4 +141,105 @@ if (! function_exists('form_fields')) {
         return $form->renderForm($options, false, true, false);
     }
 
+}
+if (! function_exists('getSelectChoicex')) {
+function getSelectChoicex($survey_id, $choice, $lng = 'en', $id = 0)
+{
+    $existingLocales = Language::getAvailableLocales();
+    $defaultLang     = Language::getDefaultLanguage();
+    $defaultLanguage = $defaultLang['locale'];
+
+    if ($defaultLanguage == app()->getLocale()) {
+        $lang = 'label';
+    } else {
+        $lang = 'label1';
+    }
+
+    $lng     = app()->getLocale();
+    $choices = \DB::select('SELECT alphasky_choices.id,alphasky_choices.choice_filter,alphasky_choices.choice,alphasky_choices.name,alphasky_choices.label as label,alphasky_choices_translations.label as label1 FROM alphasky_choices   LEFT JOIN alphasky_choices_translations ON alphasky_choices.id = alphasky_choices_translations.alphasky_choices_id where alphasky_choices.choice="' . $choice . '" and survey_id ="' . $survey_id . '"');
+
+    $html = '';
+    foreach ($choices as $choice) {
+        $select = '';
+        $fore   = '';
+        if ($choice->choice_filter) {
+            $fore = 'fore="' . $choice->choice_filter . '"';
+        }
+        if ($id && $id == $choice->name) {
+            return $choice->$lang;
+        }
+        $html .= '<option ' . $fore . ' ' . $select . '  value="' . $choice->name . '">' . $choice->$lang . '</optino>';
+    }
+    return $html;
+}
+}
+
+if (! function_exists('getSelectedChoicex')) {
+function getSelectedChoicex($survey_id, $choice, $id = 0)
+{
+    if (! is_numeric($id)) {
+        $return     = '';
+        $checkarray = json_decode($id);
+        if (is_array($checkarray)) {
+            foreach ($checkarray as $val) {
+                $return .= getSelectedChoice($survey_id, $choice, $val);
+            }
+            return $return;
+        }
+        return $id;
+    }
+
+    $existingLocales = Language::getAvailableLocales();
+    $defaultLang     = Language::getDefaultLanguage();
+    $defaultLanguage = $defaultLang['locale'];
+
+    if ($defaultLanguage == app()->getLocale()) {
+        $lang = 'label';
+    } else {
+        $lang = 'label1';
+    }
+
+    $lng = app()->getLocale();
+    if ($survey_id) {
+        $sursql = ' and survey_id ="' . $survey_id . '"';
+    } else {
+        $sursql = '';
+    }
+    $choices = \DB::select('SELECT alphasky_choices.id,alphasky_choices.choice_filter,alphasky_choices.choice,alphasky_choices.name,alphasky_choices.label as label,alphasky_choices_translations.label as label1 FROM alphasky_choices   LEFT JOIN alphasky_choices_translations ON alphasky_choices.id = alphasky_choices_translations.alphasky_choices_id where  alphasky_choices.name="' . $id . '" and  alphasky_choices.choice="' . $choice . '"' . $sursql);
+    if (isset($choices[0])) {
+        $choicex = $choices[0];
+        return ' <span class="badge badge-primary badgex-' . $choice . ' badgex-' . $choice . '-' . $choicex->name . '">' . $choicex->$lang . '</span>';
+    }
+
+    return '-';
+}
+}
+
+if (! function_exists('getSelectChoiceArrayx')) {
+function getSelectChoiceArrayx($survey_id, $choice, $lng = 'en')
+{
+    $existingLocales = Language::getAvailableLocales();
+    $defaultLang     = Language::getDefaultLanguage();
+    $defaultLanguage = $defaultLang['locale'];
+
+    if ($defaultLanguage == app()->getLocale()) {
+        $lang = 'label';
+    } else {
+        $lang = 'label1';
+    }
+
+    $lng = app()->getLocale();
+    if ($survey_id) {
+        $sursql = ' and survey_id ="' . $survey_id . '"';
+    } else {
+        $sursql = '';
+    }
+    $choices = \DB::select('SELECT alphasky_choices.id,alphasky_choices.choice_filter,alphasky_choices.choice,alphasky_choices.name,alphasky_choices.label as label,alphasky_choices_translations.label as label1 FROM alphasky_choices   LEFT JOIN alphasky_choices_translations ON alphasky_choices.id = alphasky_choices_translations.alphasky_choices_id where    alphasky_choices.choice="' . $choice . '"' . $sursql);
+
+    $array = [];
+    foreach ($choices as $choice) {
+        $array[$choice->name] = $choice->$lang;
+    }
+    return $array;
+}
 }

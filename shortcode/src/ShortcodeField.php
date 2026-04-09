@@ -16,7 +16,9 @@ class ShortcodeField
 
         $current = Arr::get($attributes, $tabKey ? "{$tabKey}_quantity" : 'quantity') ?: 6;
 
-        if (str_contains($current, ',')) {
+        if (is_array($current)) {
+            $current = end($current);
+        } elseif (str_contains($current, ',')) {
             $current = Str::afterLast($current, ',');
         }
 
@@ -84,10 +86,14 @@ class ShortcodeField
         return static::parseIds($value);
     }
 
-    public static function parseIds(?string $value): array
+    public static function parseIds(string|array|null $value): array
     {
         if (empty($value)) {
             return [];
+        }
+
+        if (is_array($value)) {
+            return $value;
         }
 
         return explode(',', $value) ?: [];

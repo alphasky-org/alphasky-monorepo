@@ -3,6 +3,7 @@
 namespace Alphasky\Sitemap\Forms\Settings;
 
 use Alphasky\Base\Forms\FieldOptions\CheckboxFieldOption;
+use Alphasky\Base\Forms\FieldOptions\HtmlFieldOption;
 use Alphasky\Base\Forms\FieldOptions\NumberFieldOption;
 use Alphasky\Base\Forms\FieldOptions\TextFieldOption;
 use Alphasky\Base\Forms\Fields\HtmlField;
@@ -34,9 +35,8 @@ class SitemapSettingForm extends SettingForm
             ->add(
                 'sitemap_info',
                 HtmlField::class,
-                [
-                    'html' => view('packages/sitemap::partials.sitemap-info')->render(),
-                ]
+                HtmlFieldOption::make()
+                    ->content(view('packages/sitemap::partials.sitemap-info')->render())
             )
             ->add(
                 'sitemap_items_per_page',
@@ -69,9 +69,8 @@ class SitemapSettingForm extends SettingForm
             ->add(
                 'indexnow_info',
                 HtmlField::class,
-                [
-                    'html' => view('packages/sitemap::partials.indexnow-info')->render(),
-                ]
+                HtmlFieldOption::make()
+                    ->content(view('packages/sitemap::partials.indexnow-info')->render())
             )
             ->addCloseCollapsible('indexnow_enabled', '1')
             ->addCloseCollapsible('sitemap_enabled', '1');

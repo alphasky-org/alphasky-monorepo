@@ -62,11 +62,11 @@
 
     <div class="form-hint">
         <a
-            href="https://alphasky.com/reset-license"
+            href="https://alphasky.org/reset-license"
             target="_blank"
             class="d-inline-block mt-2"
         > Need reset your license?
-        </a> <span class="text-body">Please log in to our <a href="https://alphasky.com/customer-license-manager" target="_blank">customer license manager site</a> to reset your license.</span>
+        </a> <span class="text-body">Please log in to our <a href="https://alphasky.org/member-license-manager" target="_blank">member license manager site</a> to reset your license.</span>
     </div>
 
 </x-core-setting::form-group>
@@ -78,7 +78,7 @@
         A purchase code (license) is only valid for One Domain. Are you using this theme on a new domain?
         Purchase a
         <a
-            href="https://alphasky.com/buy-license"
+            href="https://alphasky.org/buy-license"
             target="_blank"
             rel="nofollow"
         >

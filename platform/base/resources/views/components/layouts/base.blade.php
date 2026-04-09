@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="UTF-8">
     <meta
@@ -50,7 +51,9 @@
 
         @if (Auth::check())
             window.siteEditorLocale = "{{ apply_filters('cms_site_editor_locale', App::getLocale()) }}";
+            window.ckEditorFontFamilies = "{{ config('core.base.general.editor.ckeditor.font_families') }}";
             window.siteAuthorizedUrl = "{{ rescue(fn() => route('settings.license.verify.index')) }}";
+            window.licenseCheckUrl = "{{ rescue(fn() => route('license.check')) }}";
             window.isAuthenticated = {{ Auth::check() ? 'true' : 'false' }};
         @endif
     </script>
@@ -64,8 +67,6 @@
     {!! AdminAppearance::getCustomJs('header') !!}
 
     {!! apply_filters(BASE_FILTER_HEAD_LAYOUT_TEMPLATE, null) !!}
-
-    {!! Assets::renderHeader(['core']) !!}
 </head>
 
 <body
@@ -73,13 +74,9 @@
     style="@yield('body-style', $bodyStyle ?? null)"
     @if (BaseHelper::adminLanguageDirection() === 'rtl') dir="rtl" @endif
     {!! Html::attributes($bodyAttributes ?? []) !!}
-    @if(AdminHelper::themeMode() === 'dark')
-        data-bs-theme="dark"
-    @endif
+    @if (AdminHelper::themeMode() === 'dark') data-bs-theme="dark" @endif
 >
     {!! AdminAppearance::getCustomJs('body') !!}
-
-
 
     {{ $headerLayout ?? null }}
 

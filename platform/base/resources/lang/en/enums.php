@@ -14,6 +14,7 @@ return [
         'publish_packages_assets' => 'Publish packages assets',
         'clean_up' => 'Clean up system update files',
         'done' => 'System updated successfully',
+        'unknown' => 'Unknown step',
 
         'messages' => [
             'download' => 'Downloading update files...',

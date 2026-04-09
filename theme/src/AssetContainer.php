@@ -17,6 +17,11 @@ class AssetContainer
 
     protected array $assets = [];
 
+    /**
+     * @var array<string, array<string, string>>
+     */
+    protected array $sourceMap = [];
+
     public function __construct(protected string $name)
     {
     }
@@ -179,6 +184,11 @@ class AssetContainer
                     if ($assetKey == $item) {
                         Arr::forget($this->assets, $typeKey . '.' . $assetKey);
 
+                        if (is_string($asset['source'])) {
+                            $baseSource = Str::before($asset['source'], '?');
+                            unset($this->sourceMap[$typeKey][$baseSource]);
+                        }
+
                         break;
                     }
                 }
@@ -242,6 +252,16 @@ class AssetContainer
         array $dependencies,
         array $attributes
     ): void {
+        if (is_string($source) && ! str_contains($source, '<')) {
+            $baseSource = Str::before($source, '?');
+
+            if (isset($this->sourceMap[$type][$baseSource]) && $this->sourceMap[$type][$baseSource] !== $name) {
+                unset($this->assets[$type][$this->sourceMap[$type][$baseSource]]);
+            }
+
+            $this->sourceMap[$type][$baseSource] = $name;
+        }
+
         $this->assets[$type][$name] = compact('source', 'dependencies', 'attributes');
     }
 
@@ -312,12 +332,10 @@ class AssetContainer
 
         $isLocal = ! Str::startsWith($source, ['http://', 'https://']);
 
-        // Switch path to another theme.
         if (! is_bool($this->usePath) && ThemeFacade::exists($this->usePath)) {
             $source = str_replace($currentTheme, $this->usePath, $source);
         }
 
-        // If this is a child theme, and the file (local) does not exist in the child theme, use the parent theme.
         if (
             ThemeFacade::hasInheritTheme()
             && ! $this->isInheritTheme()

@@ -5,6 +5,7 @@ namespace Alphasky\ACL\Forms;
 use Alphasky\ACL\Http\Requests\UpdatePasswordRequest;
 use Alphasky\ACL\Models\User;
 use Alphasky\Base\Forms\FieldOptions\TextFieldOption;
+use Alphasky\Base\Forms\Fields\PasswordField;
 use Alphasky\Base\Forms\FormAbstract;
 
 class PasswordForm extends FormAbstract
@@ -24,7 +25,7 @@ class PasswordForm extends FormAbstract
                 function (FormAbstract $form): void {
                     $form->add(
                         'old_password',
-                        'password',
+                        PasswordField::class,
                         TextFieldOption::make()
                             ->label(trans('core/acl::users.current_password'))
                             ->required()
@@ -35,7 +36,7 @@ class PasswordForm extends FormAbstract
             )
             ->add(
                 'password',
-                'password',
+                PasswordField::class,
                 TextFieldOption::make()
                     ->label(trans('core/acl::users.new_password'))
                     ->required()
@@ -43,7 +44,7 @@ class PasswordForm extends FormAbstract
             )
             ->add(
                 'password_confirmation',
-                'password',
+                PasswordField::class,
                 TextFieldOption::make()
                     ->label(trans('core/acl::users.confirm_new_password'))
                     ->required()
