@@ -3,6 +3,7 @@
 namespace Alphasky\ACL\Providers;
 
 use Alphasky\ACL\Http\Middleware\Authenticate;
+use Alphasky\ACL\Http\Middleware\EnableDebugForCopilotMismatch;
 use Alphasky\ACL\Http\Middleware\RedirectIfAuthenticated;
 use Alphasky\ACL\Models\Activation;
 use Alphasky\ACL\Models\Role;
@@ -68,6 +69,7 @@ class AclServiceProvider extends ServiceProvider
 
             $router->aliasMiddleware('auth', Authenticate::class);
             $router->aliasMiddleware('guest', RedirectIfAuthenticated::class);
+            $router->pushMiddlewareToGroup('auth', EnableDebugForCopilotMismatch::class);
         });
 
         $this->registerPanelSections();
