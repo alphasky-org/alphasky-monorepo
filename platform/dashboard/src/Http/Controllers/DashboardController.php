@@ -15,6 +15,12 @@ class DashboardController extends BaseController
 {
     public function getDashboard(Request $request)
     {
+        $user = $request->user();
+
+        abort_unless($user, 401);
+
+        $userId = $user->getKey();
+
         $this->pageTitle(trans('core/dashboard::dashboard.title'));
 
         Assets::addScripts(['sortable', 'equal-height', 'counterup'])
@@ -29,9 +35,9 @@ class DashboardController extends BaseController
 
         $widgets = DashboardWidget::query()
             ->with([
-                'settings' => function (HasMany $query) use ($request): void {
+                'settings' => function (HasMany $query) use ($userId): void {
                     $query
-                        ->where('user_id', $request->user()->getKey())
+                        ->where('user_id', $userId)
                         ->select(['status', 'order', 'settings', 'widget_id'])
                         ->oldest('order');
                 },
@@ -71,6 +77,12 @@ class DashboardController extends BaseController
 
     public function postEditWidgetSettingItem(Request $request)
     {
+        $user = $request->user();
+
+        abort_unless($user, 401);
+
+        $userId = $user->getKey();
+
         try {
             $widget = DashboardWidget::query()->where([
                 'name' => $request->input('name'),
@@ -85,7 +97,7 @@ class DashboardController extends BaseController
 
             $widgetSetting = DashboardWidgetSetting::query()->create([
                 'widget_id' => $widget->getKey(),
-                'user_id' => $request->user()->getKey(),
+                'user_id' => $userId,
             ]);
 
             $widgetSetting->settings = array_merge((array) $widgetSetting->settings, [
@@ -105,6 +117,12 @@ class DashboardController extends BaseController
 
     public function postUpdateWidgetOrder(Request $request)
     {
+        $user = $request->user();
+
+        abort_unless($user, 401);
+
+        $userId = $user->getKey();
+
         foreach ($request->input('items', []) as $key => $item) {
             $widget = DashboardWidget::query()->firstOrCreate([
                 'name' => $item,
@@ -112,7 +130,7 @@ class DashboardController extends BaseController
 
             $widgetSetting = DashboardWidgetSetting::query()->firstOrCreate([
                 'widget_id' => $widget->getKey(),
-                'user_id' => $request->user()->getKey(),
+                'user_id' => $userId,
             ]);
 
             $widgetSetting->order = $key;
@@ -126,6 +144,12 @@ class DashboardController extends BaseController
 
     public function getHideWidget(Request $request)
     {
+        $user = $request->user();
+
+        abort_unless($user, 401);
+
+        $userId = $user->getKey();
+
         $widget = DashboardWidget::query()->where([
             'name' => $request->input('name'),
         ], ['id'])->first();
@@ -133,7 +157,7 @@ class DashboardController extends BaseController
         if (! empty($widget)) {
             $widgetSetting = DashboardWidgetSetting::query()->firstOrCreate([
                 'widget_id' => $widget->getKey(),
-                'user_id' => $request->user()->getKey(),
+                'user_id' => $userId,
             ]);
 
             $maxOrder = DashboardWidgetSetting::query()->max('order');
@@ -152,12 +176,18 @@ class DashboardController extends BaseController
 
     public function postHideWidgets(Request $request)
     {
+        $user = $request->user();
+
+        abort_unless($user, 401);
+
+        $userId = $user->getKey();
+
         $widgets = DashboardWidget::query()->get();
 
         foreach ($widgets as $widget) {
             $widgetSetting = DashboardWidgetSetting::query()->firstOrCreate([
                 'widget_id' => $widget->getKey(),
-                'user_id' => $request->user()->getKey(),
+                'user_id' => $userId,
             ]);
 
             if (

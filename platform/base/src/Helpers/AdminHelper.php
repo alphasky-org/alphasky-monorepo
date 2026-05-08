@@ -75,6 +75,13 @@ class AdminHelper
 
     public function getAdminLocales(): array
     {
+
+        $languages = collect(Language::getAvailableLocales())
+            ->pluck('name', 'locale')
+            ->map(fn ($item, $key) => $item . ' - ' . $key)
+            ->all();
+        return $languages;
+
         $baseLangPath = platform_path('core/base/resources/lang');
 
         if (! File::isDirectory($baseLangPath)) {
