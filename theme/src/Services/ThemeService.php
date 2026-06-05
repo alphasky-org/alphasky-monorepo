@@ -233,6 +233,7 @@ class ThemeService
             }
 
             $resourcePath = $this->getPath($theme, 'public');
+            $langPath = $this->getPath($theme, 'lang');
 
             $themePath = public_path('themes');
             if (! $this->files->isDirectory($themePath)) {
@@ -257,14 +258,24 @@ class ThemeService
 
             if ($inheritTheme) {
                 $parentResourcePath = $this->getPath($inheritTheme, 'public');
+                $parentLangPath = $this->getPath($inheritTheme, 'lang');
 
                 if ($this->files->isDirectory($parentResourcePath)) {
                     $this->files->copyDirectory($parentResourcePath, $publishPath);
                 }
 
+                if ($this->files->isDirectory($parentLangPath)) {
+                    $this->files->copyDirectory($parentLangPath, $publishPath . '/lang');
+                }
+
                 $this->copyDirectoryWithoutOverwriting($resourcePath, $publishPath);
+                $this->copyDirectoryWithoutOverwriting($langPath, $publishPath . '/lang');
             } else {
                 $this->files->copyDirectory($resourcePath, $publishPath);
+
+                if ($this->files->isDirectory($langPath)) {
+                    $this->files->copyDirectory($langPath, $publishPath . '/lang');
+                }
             }
 
             $screenshot = $this->getPath($theme, 'screenshot.png');
