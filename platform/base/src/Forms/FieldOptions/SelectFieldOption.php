@@ -12,6 +12,8 @@ class SelectFieldOption extends FormFieldOptions
 
     protected array|string|bool|null $selected;
 
+    protected array $optionAttributes = [];
+
     protected bool $searchable = false;
 
     protected bool $multiple = false;
@@ -37,6 +39,18 @@ class SelectFieldOption extends FormFieldOptions
         $this->selected = $selected instanceof Closure ? $selected() : $selected;
 
         return $this;
+    }
+
+    public function optionAttributes(array|Closure $optionAttributes): static
+    {
+        $this->optionAttributes = $optionAttributes instanceof Closure ? $optionAttributes() : $optionAttributes;
+
+        return $this;
+    }
+
+    public function getOptionAttributes(): array
+    {
+        return $this->optionAttributes;
     }
 
     public function getSelected(): array|string|bool|null
@@ -69,6 +83,13 @@ class SelectFieldOption extends FormFieldOptions
     public function ajaxUrl(string $url): static
     {
         $this->addAttribute('data-url', $url);
+
+        return $this;
+    }
+
+    public function dependentOn(string $selector): static
+    {
+        $this->addAttribute('data-dependent-select', $selector);
 
         return $this;
     }
@@ -119,6 +140,7 @@ class SelectFieldOption extends FormFieldOptions
         $data = parent::toArray();
 
         $data['choices'] = $this->getChoices();
+        $data['optionAttrs'] = $this->getOptionAttributes();
 
         if (isset($this->selected)) {
             $data['selected'] = $this->getSelected();

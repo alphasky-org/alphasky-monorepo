@@ -22,7 +22,7 @@ class PublicController extends BaseController
 {
     public function getIndex()
     {
-        Theme::addBodyAttributes(['id' => 'page-home']);
+       // Theme::addBodyAttributes(['id' => 'page-home']);
 
         if (defined('PAGE_MODULE_SCREEN_NAME') && BaseHelper::getHomepageId()) {
             $data = (new PageService())->handleFrontRoutes(null);

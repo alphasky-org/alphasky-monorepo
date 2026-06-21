@@ -9,6 +9,11 @@ use Throwable;
 
 class EnumColumn extends FormattedColumn implements FormattedColumnContract
 {
+    /**
+     * @var string|BackedEnum|Enum
+     */
+    protected $enum;
+
     public static function make(array|string $data = [], string $name = ''): static
     {
         return parent::make($data, $name)
@@ -26,20 +31,19 @@ class EnumColumn extends FormattedColumn implements FormattedColumnContract
 
     public function formattedValue($value): ?string
     {
-        if (! $value instanceof Enum && ! $value instanceof BackedEnum) {
+        if (! $this->enum) {
             return '';
         }
 
-        if ($value instanceof BackedEnum) {
-            return $value->value;
-        }
+        $enumClass = is_string($this->enum) ? $this->enum : $this->enum::class;
 
-        $table = $this->getTable();
+        return $enumClass::toVal($value);
+    }
 
-        if ($table->isExportingToExcel() || $table->isExportingToCSV()) {
-            return $value->getValue();
-        }
+    public function enum(string|BackedEnum|Enum $enum): static
+    {
+        $this->enum = $enum;
 
-        return $value->toHtml() ?: $value->getValue();
+        return $this;
     }
 }

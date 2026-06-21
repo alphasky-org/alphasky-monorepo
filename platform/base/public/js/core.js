@@ -47,3 +47,23 @@ $(window).resize(function() {
 
 // Initial call to set the correct display on page load
 updateTablesDisplay();
+
+
+window.onload = function () {
+    var isfirst=0;
+$(".selectlevel").change(function () {
+    var fore = $(this).val();
+    var target = '#' + $(this).data("filter");
+    var id = $(this).attr("id");
+    $(target + ">option").hide();
+    $(target + '>option[data-' + id + '="' + fore + '"]').show();
+    if(isfirst){
+    $(target + '>option[data-' + id + '="' + fore + '"]:first').prop("checked", true);
+    $(target).val($(target + '>option[data-' + id + '="' + fore + '"]:first').attr("value"));
+    }
+    isfirst=1;
+});
+
+$(".selectlevel").trigger("change");
+};
+
