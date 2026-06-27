@@ -59,11 +59,11 @@ if (! function_exists('theme')) {
 }
 
 if (! function_exists('theme_option')) {
-    function theme_option($key = null, $default = ''): ThemeOptionBase|string|null
+    function theme_option($key = null, $default = '', ?string $locale = null): ThemeOptionBase|string|null
     {
         if (! empty($key)) {
             try {
-                return ThemeOption::getOption($key, $default);
+                return ThemeOption::getOption($key, $default, $locale);
             } catch (Exception $exception) {
                 BaseHelper::logError($exception);
 

@@ -519,7 +519,7 @@ class ThemeOption
         return setting()->has($this->getOptionKey($key, $locale));
     }
 
-    public function getOption(string $key = '', bool|string|null|array $default = ''): ?string
+    public function getOption(string $key = '', bool|string|null|array $default = '', ?string $locale = null): ?string
     {
         if (is_array($default)) {
             $default = json_encode($default);
@@ -527,7 +527,7 @@ class ThemeOption
 
         $default = setting($this->getOptionKey($key), $default);
 
-        $value = setting($this->getOptionKey($key, $this->getCurrentLocaleCode()), $default);
+        $value = setting($this->getOptionKey($key, $locale ?: $this->getCurrentLocaleCode()), $default);
 
         $value = $value ?: $default;
 
