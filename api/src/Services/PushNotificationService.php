@@ -7,18 +7,16 @@ use Alphasky\Api\Models\PushNotification;
 use Alphasky\Api\Models\PushNotificationRecipient;
 use Carbon\Carbon;
 use Exception;
-use Google\Auth\Credentials\ServiceAccountCredentials;
-use Google\Auth\HttpHandler\HttpHandlerFactory;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
+use Kreait\Firebase\Exception\Messaging\InvalidMessage;
+use Kreait\Firebase\Exception\Messaging\NotFound;
+use Kreait\Firebase\Messaging\AndroidConfig;
+use Kreait\Firebase\Messaging\ApnsConfig;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification;
 use Illuminate\Support\Facades\Log;
 
 class PushNotificationService
 {
-    protected string $fcmV1Url = 'https://fcm.googleapis.com/v1/projects/{project_id}/messages:send';
-
-    protected ?string $accessToken = null;
-
     public function sendToAll(array $notification): array
     {
         $tokens = DeviceToken::query()->active()->get();
@@ -108,29 +106,12 @@ class PushNotificationService
     {
         $tokens = $deviceTokens->pluck('token')->toArray();
 
-        $projectId = setting('fcm_project_id');
-        $serviceAccountPath = setting('fcm_service_account_path');
-
-        if (empty($projectId) || empty($serviceAccountPath)) {
+        if (! app()->bound('firebase.messaging')) {
             $pushNotification->markAsFailed('FCM configuration is incomplete');
 
             return [
                 'success' => false,
-                'message' => 'FCM project ID or service account file is not configured',
-                'sent_count' => 0,
-                'failed_count' => count($tokens),
-            ];
-        }
-
-        // Get access token for FCM v1 API
-        try {
-            $accessToken = $this->getAccessToken($serviceAccountPath);
-        } catch (Exception $e) {
-            $pushNotification->markAsFailed('Failed to get FCM access token: ' . $e->getMessage());
-
-            return [
-                'success' => false,
-                'message' => 'Failed to authenticate with FCM: ' . $e->getMessage(),
+                'message' => 'Firebase messaging service is not configured',
                 'sent_count' => 0,
                 'failed_count' => count($tokens),
             ];
@@ -151,9 +132,8 @@ class PushNotificationService
         $failedCount = 0;
         $invalidTokens = [];
 
-        // FCM v1 API sends to individual tokens, not batches
         foreach ($deviceTokens as $deviceToken) {
-            $result = $this->sendToSingleToken($deviceToken->token, $notification, $accessToken, $projectId, $deviceToken, $pushNotification);
+            $result = $this->sendToSingleToken($deviceToken->token, $notification, $deviceToken, $pushNotification);
             if ($result['success']) {
                 $sentCount++;
             } else {
@@ -183,119 +163,69 @@ class PushNotificationService
         ];
     }
 
-    protected function sendToSingleToken(string $token, array $notification, string $accessToken, string $projectId, $deviceToken = null, ?PushNotification $pushNotification = null): array
+    protected function sendToSingleToken(string $token, array $notification, $deviceToken = null, ?PushNotification $pushNotification = null): array
     {
         try {
-            $url = str_replace('{project_id}', $projectId, $this->fcmV1Url);
+            /** @var \Kreait\Firebase\Contract\Messaging $messaging */
+            $messaging = app('firebase.messaging');
 
-            $payload = [
-                'message' => [
-                    'token' => $token,
-                    'notification' => [
-                        'title' => $notification['title'],
-                        'body' => $notification['message'],
-                    ],
-                    'data' => [
-                        'title' => $notification['title'],
-                        'message' => $notification['message'],
-                        'action_url' => $notification['action_url'] ?? '',
-                        'image_url' => $notification['image_url'] ?? '',
-                        'type' => $notification['type'] ?? 'general',
-                        'sent_at' => Carbon::now()->toISOString(),
-                    ],
-                ],
-            ];
+            $message = $this->buildFirebaseMessage($token, $notification);
+            $response = $messaging->send($message);
 
-            // Add image to notification if provided
-            if (! empty($notification['image_url'])) {
-                $payload['message']['notification']['image'] = $notification['image_url'];
-            }
+            if ($deviceToken && $pushNotification) {
+                $recipient = PushNotificationRecipient::query()
+                    ->where('push_notification_id', $pushNotification->id)
+                    ->where('device_token', $token)
+                    ->first();
 
-            // Add Android-specific configuration
-            $payload['message']['android'] = [
-                'notification' => [
-                    'click_action' => $notification['action_url'] ?? '',
-                    'sound' => 'default',
-                ],
-                'priority' => 'high',
-            ];
-
-            // Add iOS-specific configuration
-            $payload['message']['apns'] = [
-                'payload' => [
-                    'aps' => [
-                        'alert' => [
-                            'title' => $notification['title'],
-                            'body' => $notification['message'],
-                        ],
-                        'sound' => 'default',
-                        'badge' => 1,
-                    ],
-                ],
-            ];
-
-            if (! empty($notification['action_url'])) {
-                $payload['message']['apns']['payload']['aps']['category'] = 'OPEN_URL';
-            }
-
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $accessToken,
-                'Content-Type' => 'application/json',
-            ])->post($url, $payload);
-
-            if ($response->successful()) {
-                // Update recipient status if available
-                if ($deviceToken && $pushNotification) {
-                    $recipient = PushNotificationRecipient::query()
-                        ->where('push_notification_id', $pushNotification->id)
-                        ->where('device_token', $token)
-                        ->first();
-
-                    if ($recipient) {
-                        $recipient->update([
-                            'status' => 'delivered',
-                            'delivered_at' => Carbon::now(),
-                            'fcm_response' => $response->json(),
-                        ]);
-                    }
+                if ($recipient) {
+                    $recipient->update([
+                        'status' => 'delivered',
+                        'delivered_at' => Carbon::now(),
+                        'fcm_response' => $response,
+                    ]);
                 }
-
-                return [
-                    'success' => true,
-                    'invalid_token' => false,
-                ];
-            } else {
-                $responseData = $response->json();
-                $isInvalidToken = $this->isInvalidTokenError($responseData);
-
-                // Update recipient status if available
-                if ($deviceToken && $pushNotification) {
-                    $recipient = PushNotificationRecipient::query()
-                        ->where('push_notification_id', $pushNotification->id)
-                        ->where('device_token', $token)
-                        ->first();
-
-                    if ($recipient) {
-                        $recipient->markAsFailed(
-                            $responseData['error']['message'] ?? 'Unknown error',
-                            $responseData
-                        );
-                    }
-                }
-
-                Log::error('FCM v1 request failed', [
-                    'status' => $response->status(),
-                    'response' => $response->body(),
-                    'token' => substr($token, 0, 20) . '...',
-                ]);
-
-                return [
-                    'success' => false,
-                    'invalid_token' => $isInvalidToken,
-                ];
             }
+
+            return [
+                'success' => true,
+                'invalid_token' => false,
+            ];
+        } catch (NotFound|InvalidMessage $e) {
+            if ($deviceToken && $pushNotification) {
+                $recipient = PushNotificationRecipient::query()
+                    ->where('push_notification_id', $pushNotification->id)
+                    ->where('device_token', $token)
+                    ->first();
+
+                if ($recipient) {
+                    $recipient->markAsFailed($e->getMessage(), $e->errors() ?? []);
+                }
+            }
+
+            Log::warning('Firebase token is invalid or unknown', [
+                'token' => substr($token, 0, 20) . '...',
+                'notification' => $notification,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'invalid_token' => true,
+            ];
         } catch (Exception $e) {
-            Log::error('FCM v1 send error: ' . $e->getMessage(), [
+            if ($deviceToken && $pushNotification) {
+                $recipient = PushNotificationRecipient::query()
+                    ->where('push_notification_id', $pushNotification->id)
+                    ->where('device_token', $token)
+                    ->first();
+
+                if ($recipient) {
+                    $recipient->markAsFailed($e->getMessage(), []);
+                }
+            }
+
+            Log::error('Firebase send error: ' . $e->getMessage(), [
                 'token' => substr($token, 0, 20) . '...',
                 'notification' => $notification,
             ]);
@@ -307,71 +237,46 @@ class PushNotificationService
         }
     }
 
-    protected function getAccessToken(string $serviceAccountPath): string
+    protected function buildFirebaseMessage(string $token, array $notification): CloudMessage
     {
-        if ($this->accessToken) {
-            return $this->accessToken;
+        $apnsPayload = [
+            'payload' => [
+                'aps' => [
+                    'sound' => 'default',
+                    'badge' => 1,
+                ],
+            ],
+        ];
+
+        if (! empty($notification['action_url'])) {
+            $apnsPayload['payload']['aps']['category'] = 'OPEN_URL';
         }
 
-        try {
-            // Check if the path is a full path or relative to storage
-            if (! file_exists($serviceAccountPath)) {
-                $serviceAccountPath = storage_path('app/' . $serviceAccountPath);
-            }
+        $message = CloudMessage::new()
+            ->withNotification(
+                empty($notification['image_url'])
+                    ? Notification::create($notification['title'], $notification['message'])
+                    : Notification::create($notification['title'], $notification['message'])->withImageUrl($notification['image_url'])
+            )
+            ->withData([
+                'title' => (string) $notification['title'],
+                'message' => (string) $notification['message'],
+                'action_url' => (string) ($notification['action_url'] ?? ''),
+                'image_url' => (string) ($notification['image_url'] ?? ''),
+                'type' => (string) ($notification['type'] ?? 'general'),
+                'sent_at' => Carbon::now()->toISOString(),
+            ])
+            ->withToken($token)
+            ->withAndroidConfig(AndroidConfig::fromArray([
+                'priority' => 'high',
+                'notification' => [
+                    'click_action' => (string) ($notification['action_url'] ?? ''),
+                    'sound' => 'default',
+                ],
+            ]))
+            ->withApnsConfig(ApnsConfig::fromArray($apnsPayload));
 
-            if (! file_exists($serviceAccountPath)) {
-                throw new Exception('Service account file not found: ' . $serviceAccountPath);
-            }
-
-            $serviceAccountJson = json_decode(file_get_contents($serviceAccountPath), true);
-
-            if (! $serviceAccountJson) {
-                throw new Exception('Invalid service account JSON file');
-            }
-
-            $credentials = new ServiceAccountCredentials(
-                'https://www.googleapis.com/auth/firebase.messaging',
-                $serviceAccountJson
-            );
-
-            $httpHandler = HttpHandlerFactory::build();
-            $token = $credentials->fetchAuthToken($httpHandler);
-
-            if (! isset($token['access_token'])) {
-                throw new Exception('Failed to get access token from service account');
-            }
-
-            $this->accessToken = $token['access_token'];
-
-            return $this->accessToken;
-
-        } catch (Exception $e) {
-            Log::error('Failed to get FCM access token: ' . $e->getMessage());
-
-            throw $e;
-        }
-    }
-
-    protected function isInvalidTokenError(array $responseData): bool
-    {
-        if (! isset($responseData['error']['details'])) {
-            return false;
-        }
-
-        foreach ($responseData['error']['details'] as $detail) {
-            if (isset($detail['errorCode']) &&
-                in_array($detail['errorCode'], ['UNREGISTERED', 'INVALID_ARGUMENT'])) {
-                return true;
-            }
-        }
-
-        // Also check the main error code
-        if (isset($responseData['error']['status']) &&
-            in_array($responseData['error']['status'], ['NOT_FOUND', 'INVALID_ARGUMENT'])) {
-            return true;
-        }
-
-        return false;
+        return $message;
     }
 
     public function validateNotification(array $notification): array
@@ -422,6 +327,6 @@ class PushNotificationService
             'action_url' => $notification['action_url'] ?? null,
             'image_url' => $notification['image_url'] ?? null,
             'data' => $notification['data'] ?? null,
-        ], Auth::id());
+        ], auth()->id());
     }
 }

@@ -77,6 +77,10 @@ export default defineComponent({
                 Object.assign(params, { is_featured: true })
             }
 
+            if (this.filter === 'mine') {
+                Object.assign(params, { mine: true })
+            }
+
             switch (this.sort) {
                 case 'popular':
                     Object.assign(params, { is_popular: true })
@@ -857,7 +861,7 @@ export default defineComponent({
                 <div class="card-header">
                     <ul class="nav nav-tabs card-header-tabs">
                         <li
-                            v-for="(item, index) in ['all', 'featured']"
+                            v-for="(item, index) in ['all', 'featured', 'mine']"
                             class="nav-item"
                             :key="index"
                             role="presentation"
@@ -872,7 +876,7 @@ export default defineComponent({
                                 role="tab"
                                 :disabled="loading"
                             >
-                                {{ __(`base.${item}`) }}
+                                {{ item === 'mine' ? 'إضافاتي' : __(`base.${item}`) }}
                                 <span
                                     class="badge bg-blue text-blue-fg badge-notification badge-pill"
                                     v-if="filter === item && !loading"

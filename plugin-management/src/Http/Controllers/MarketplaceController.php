@@ -2,6 +2,7 @@
 
 namespace Alphasky\PluginManagement\Http\Controllers;
 
+use Alphasky\Alphaskyplugin\Models\Alphaskyplugin;
 use Alphasky\Base\Facades\Assets;
 use Alphasky\Base\Http\Controllers\BaseController;
 use Alphasky\Base\Http\Responses\BaseHttpResponse;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -43,6 +45,10 @@ class MarketplaceController extends BaseController
 
     public function list(Request $request): array|BaseHttpResponse
     {
+        if (class_exists(Alphaskyplugin::class)) {
+            return $this->listLocalPlugins($request);
+        }
+
         $request->merge(['type' => 'plugin']);
 
         $response = $this->marketplaceService->callApi('get', '/products', $request->input());
@@ -74,8 +80,147 @@ class MarketplaceController extends BaseController
         return $data;
     }
 
+    protected function listLocalPlugins(Request $request): array
+    {
+        $perPage = 40;
+        $page = max(1, (int) $request->input('page', 1));
+        $search = trim((string) $request->input('q', ''));
+        $mine = $request->boolean('mine');
+
+        $query = Alphaskyplugin::query();
+
+        if ($mine) {
+            $query->where('license', '5');
+        } else {
+            $query->where(function ($query) {
+                $query->whereNull('license')->orWhere('license', '!=', '5');
+            });
+        }
+
+        if ($search !== '') {
+            $query->where(function ($query) use ($search) {
+                $query
+                    ->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('package_name', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhere('author_name', 'like', '%' . $search . '%');
+            });
+        }
+
+        $paginator = $query
+            ->latest('updated_at')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        $coreVersion = get_core_version();
+
+        return [
+            'data' => $paginator->getCollection()
+                ->map(fn (Alphaskyplugin $plugin) => $this->formatLocalPlugin($plugin, $coreVersion))
+                ->values()
+                ->all(),
+            'links' => [
+                'first' => $paginator->url(1),
+                'last' => $paginator->url($paginator->lastPage()),
+                'prev' => $paginator->previousPageUrl(),
+                'next' => $paginator->nextPageUrl(),
+            ],
+            'meta' => $this->formatPaginationMeta($paginator),
+            'error' => false,
+            'message' => null,
+            'additional' => [
+                'advertisement' => '',
+            ],
+        ];
+    }
+
+    protected function formatLocalPlugin(Alphaskyplugin $plugin, string $coreVersion): array
+    {
+        $minimumCoreVersion = trim((string) $plugin->minimum_core_version) ?: '0.0.0';
+        $updatedAt = $plugin->updated_at ?: $plugin->created_at ?: now();
+        $packageName = trim((string) $plugin->package_name);
+
+        return [
+            'id' => (string) $plugin->getKey(),
+            'package_name' => $packageName,
+            'name' => (string) ($plugin->name ?: $packageName),
+            'type' => 'plugin',
+            'content' => (string) ($plugin->content ?: $plugin->description ?: ''),
+            'author_name' => (string) ($plugin->author_name ?: 'Alphasky'),
+            'author_url' => $plugin->author_url,
+            'image_url' => $this->normalizeLocalPluginUrl((string) $plugin->image_url),
+            'url' => (string) ($plugin->url ?: $plugin->source_url ?: '#'),
+            'description' => (string) ($plugin->description ?: strip_tags((string) $plugin->content)),
+            'screenshots' => $this->normalizeScreenshots($plugin->screenshots),
+            'minimum_core_version' => $minimumCoreVersion,
+            'license' => (string) ($plugin->license ?: ''),
+            'license_url' => $plugin->license_url,
+            'latest_version' => (string) ($plugin->latest_version ?: '1.0.0'),
+            'downloads_count' => (int) $plugin->downloads_count,
+            'ratings_count' => (int) $plugin->ratings_count,
+            'ratings_avg' => (float) $plugin->ratings_avg,
+            'last_updated_at' => Carbon::parse($updatedAt)->toJSON(),
+            'can_download' => (string) $plugin->can_download === '1',
+            'price' => (string) ($plugin->price ?? '0.00'),
+            'source' => (string) ($plugin->source ?: 'local'),
+            'buy_url' => (string) ($plugin->source_url ?: $plugin->url ?: '#'),
+            'version_check' => version_compare($coreVersion, $minimumCoreVersion, '>='),
+            'humanized_last_updated_at' => Carbon::parse($updatedAt)->diffForHumans(),
+        ];
+    }
+
+    protected function formatPaginationMeta(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'current_page' => $paginator->currentPage(),
+            'from' => $paginator->firstItem(),
+            'last_page' => $paginator->lastPage(),
+            'links' => $paginator->linkCollection()->toArray(),
+            'path' => $paginator->path(),
+            'per_page' => $paginator->perPage(),
+            'to' => $paginator->lastItem(),
+            'total' => $paginator->total(),
+        ];
+    }
+
+    protected function normalizeScreenshots(mixed $screenshots): array
+    {
+        if (is_string($screenshots)) {
+            $decoded = json_decode($screenshots, true);
+            $screenshots = is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', $screenshots)));
+        }
+
+        if (! is_array($screenshots)) {
+            return [];
+        }
+
+        return array_values(array_map(fn ($screenshot) => $this->normalizeLocalPluginUrl((string) $screenshot), $screenshots));
+    }
+
+    protected function normalizeLocalPluginUrl(string $path): string
+    {
+        $path = trim($path);
+
+        if ($path === '') {
+            return asset('vendor/core/core/base/images/placeholder.png');
+        }
+
+        if (Str::startsWith($path, ['http://', 'https://', '/'])) {
+            return $path;
+        }
+
+        return asset('storage/' . ltrim($path, '/'));
+    }
+
     public function detail(string $id): JsonResponse|array|null
     {
+        if (class_exists(Alphaskyplugin::class)) {
+            $plugin = Alphaskyplugin::query()->find($id);
+
+            if ($plugin) {
+                return ['data' => $this->formatLocalPlugin($plugin, get_core_version())];
+            }
+        }
+
         $response = $this->marketplaceService->callApi('get', '/products/' . $id);
 
         if ($response instanceof JsonResponse) {

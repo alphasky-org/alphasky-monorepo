@@ -66,4 +66,5 @@ return [
     'checkbox' => 'خانة الاختيار',
     'toggle_columns' => 'تبديل الأعمدة',
     'created_by' => 'أنشئ بواسطة',
+    'file' => 'ملف',
 ];

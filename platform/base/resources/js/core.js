@@ -870,6 +870,7 @@ class Alphasky {
         Alphasky.initLightbox()
         Alphasky.initTreeCategoriesSelect()
         Alphasky.initCoreIcon()
+        Alphasky.initEditable()
 
         document.dispatchEvent(new CustomEvent('core-init-resources'))
     }
@@ -2144,20 +2145,85 @@ class Alphasky {
     static initEditable() {
         const $element = $('.editable')
 
-        if (!$element.length) {
+        if (!$element.length || !jQuery().editable) {
             return
         }
 
-        $element.editable({
-            mode: 'inline',
-            success: function (response) {
-                if (response.error && response.message) {
-                    Alphasky.showError(response.message)
-                }
-            },
-            error: function (response) {
-                Alphasky.handleError(response)
-            },
+        $element.each(function () {
+            const $this = $(this)
+
+            if ($this.data('editable')) {
+                return
+            }
+
+            const tableElement = $this.closest('table')[0]
+
+            if (!tableElement || !$.fn.dataTable || !$.fn.dataTable.isDataTable(tableElement)) {
+                return
+            }
+
+            let table
+
+            try {
+                table = $(tableElement).DataTable()
+            } catch (error) {
+                return
+            }
+
+            const cell = table.cell(this)
+            const cellIndex = cell.index()
+
+            if (!cellIndex || typeof cellIndex.column === 'undefined') {
+                return
+            }
+
+            const columnOptions = table.settings()[0].aoColumns[cellIndex.column] || {}
+            const ajaxUrl = $this.data('url') || columnOptions.editableUrl || table.ajax.url()
+            const columnName = $this.data('name') || columnOptions.name || columnOptions.data
+            const getRowData = () => table.row($this.closest('tr')).data() || {}
+            const getPrimaryKey = () => {
+                const row = getRowData()
+
+                return $this.data('pk') || row.id || row.DT_RowId
+            }
+
+            if (!columnName) {
+                return
+            }
+
+            const editableOptions = {
+                mode: 'inline',
+                type: $this.data('type') || columnOptions.editableType || 'text',
+                name: columnName,
+                pk: getPrimaryKey,
+                url: ajaxUrl,
+                ajaxOptions: {
+                    type: 'POST',
+                },
+                params: function (params) {
+                    params._editable = 1
+                    params.name = columnName
+                    params.pk = getPrimaryKey()
+
+                    return params
+                },
+                success: function (response) {
+                    if (response && response.error && response.message) {
+                        Alphasky.showError(response.message)
+
+                        return response.message
+                    }
+                },
+                error: function (response) {
+                    Alphasky.handleError(response)
+                },
+            }
+
+            if (columnOptions.editableSource) {
+                editableOptions.source = columnOptions.editableSource
+            }
+
+            $this.editable(editableOptions)
         })
     }
 
@@ -2245,15 +2311,243 @@ $(".selectlevel").change(function () {
     var fore = $(this).val();
     var target = '#' + $(this).data("filter");
     var id = $(this).attr("id");
-    $(target + ">option").hide();
-    $(target + '>option[data-' + id + '="' + fore + '"]').show();
-    if(isfirst){
-    $(target + '>option[data-' + id + '="' + fore + '"]:first').prop("checked", true);
-    $(target).val($(target + '>option[data-' + id + '="' + fore + '"]:first').attr("value"));
+    var targetElement = $(target);
+    var values = Array.isArray(fore) ? fore.map(String) : [String(fore || '')];
+    var firstValue = null;
+    var currentValue = targetElement.val();
+    if (!targetElement.data('all-options')) {
+        targetElement.data('all-options', targetElement.find('option').clone());
     }
+    targetElement.empty();
+    targetElement.data('all-options').clone().each(function () {
+        var option = $(this);
+        var optionValue = option.attr('value');
+        var isEmpty = optionValue === '' || typeof optionValue === 'undefined';
+        var isMatch = values.indexOf(String(option.attr('data-' + id))) !== -1;
+        var shouldShow = isEmpty || isMatch;
+        if (shouldShow) {
+            targetElement.append(option);
+            if (!isEmpty && isMatch && firstValue === null) {
+                firstValue = optionValue;
+            }
+        }
+    });
+    if(isfirst){
+    targetElement.val(firstValue);
+    }
+    else if (currentValue && targetElement.find('option[value="' + currentValue + '"]').length) {
+        targetElement.val(currentValue);
+    } else if (currentValue) {
+        targetElement.val(firstValue);
+    }
+    targetElement.trigger('change.select2');
     isfirst=1;
 });
 
 $(".selectlevel").trigger("change");
 };
+
+window.initSelectLevelFields = function (container) {
+    var scope = container ? $(container) : $(document);
+    var fields = scope.find('.selectlevel').add(scope.filter('.selectlevel'));
+
+    fields.off('change.bb-selectlevel').on('change.bb-selectlevel', function () {
+        var fore = $(this).val();
+        var target = '#' + $(this).data('filter');
+        var id = $(this).attr('id');
+        var targetElement = $(target);
+        var values = Array.isArray(fore) ? fore.map(String) : [String(fore || '')];
+        var firstValue = null;
+        var currentValue = targetElement.val();
+
+        if (!targetElement.data('all-options')) {
+            targetElement.data('all-options', targetElement.find('option').clone());
+        }
+
+        targetElement.empty();
+        targetElement.data('all-options').clone().each(function () {
+            var option = $(this);
+            var optionValue = option.attr('value');
+            var isEmpty = optionValue === '' || typeof optionValue === 'undefined';
+            var isMatch = values.indexOf(String(option.attr('data-' + id))) !== -1;
+
+            if (isEmpty || isMatch) {
+                targetElement.append(option);
+
+                if (!isEmpty && isMatch && firstValue === null) {
+                    firstValue = optionValue;
+                }
+            }
+        });
+
+        if (currentValue && targetElement.find('option[value="' + currentValue + '"]').length) {
+            targetElement.val(currentValue);
+        } else {
+            targetElement.val(firstValue);
+        }
+
+        targetElement.trigger('change.select2');
+    }).trigger('change.bb-selectlevel');
+};
+
+window.initSelectLevelFields(document);
+
+$(document).off('show.bs.modal.bb-inline-delete-refresh', '.modal-confirm-delete').on('show.bs.modal.bb-inline-delete-refresh', '.modal-confirm-delete', function (event) {
+    var trigger = $(event.relatedTarget);
+    var submitButton = $(event.currentTarget).find('[data-bb-toggle="modal-confirm-delete"]');
+
+    submitButton
+        .attr('data-url', trigger.attr('data-url') || '')
+        .attr('data-refresh-url', trigger.attr('data-refresh-url') || '')
+        .attr('data-target', trigger.attr('data-target') || '');
+});
+
+$(document).off('click.bb-inline-delete-refresh', '[data-bb-toggle="modal-confirm-delete"]').on('click.bb-inline-delete-refresh', '[data-bb-toggle="modal-confirm-delete"]', function (event) {
+    var button = $(this);
+    var refreshUrl = button.attr('data-refresh-url');
+    var target = button.attr('data-target');
+    var deleteUrl = button.attr('data-url');
+
+    if (!refreshUrl || !target || !deleteUrl) {
+        return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    var normalizeInlineListHtml = function (html) {
+        var wrapper = $('<div>').append($.parseHTML(html || '', document, false));
+        var bodyContent = wrapper.find('body');
+
+        if (bodyContent.length) {
+            wrapper = $('<div>').append(bodyContent.contents());
+        }
+
+        wrapper.find('script, title, meta, link[rel="stylesheet"]').remove();
+
+        return wrapper.contents();
+    };
+
+    Alphasky.showButtonLoading(button);
+    $httpClient.make().delete(deleteUrl).then(function (response) {
+        Alphasky.showSuccess(response.data.message);
+
+        $httpClient.make().get(refreshUrl).then(function (refreshResponse) {
+            $(target).replaceWith(normalizeInlineListHtml((refreshResponse.data.data && refreshResponse.data.data.html) || refreshResponse.data.html || ''));
+        });
+
+        button.closest('.modal').modal('hide');
+    }).finally(function () {
+        Alphasky.hideButtonLoading(button);
+    });
+});
+
+$(document).off('click.bb-inline-create-modal', '[data-bb-toggle="inline-create-modal"]').on('click.bb-inline-create-modal', '[data-bb-toggle="inline-create-modal"]', function (event) {
+    event.preventDefault();
+
+    var button = $(this);
+    var modal = $(button.data('modal-target'));
+
+    if (!modal.length || !button.data('url')) {
+        return;
+    }
+
+    var body = modal.find('[data-bb-toggle="inline-create-modal-body"]');
+
+    Alphasky.showButtonLoading(button);
+    var normalizeInlineCreateHtml = function (html) {
+        var wrapper = $('<div>').append($.parseHTML(html || '', document, false));
+        var bodyContent = wrapper.find('body');
+
+        if (bodyContent.length) {
+            wrapper = $('<div>').append(bodyContent.contents());
+        }
+
+        wrapper.find('script, title, meta, link[rel="stylesheet"]').remove();
+
+        return wrapper.contents();
+    };
+
+    $httpClient.make().get(button.data('url')).then(function (response) {
+        body.empty().append(normalizeInlineCreateHtml((response.data.data && response.data.data.html) || response.data.html || ''));
+        var inlineForm = body.find('form');
+
+        inlineForm.removeClass('dirty-check dirty');
+        inlineForm.find(':input').attr('data-ays-ignore', '1');
+        modal.data('refresh-url', button.data('refresh-url'));
+        modal.data('target', button.data('target'));
+        modal.modal('show');
+
+        if (typeof Alphasky !== 'undefined' && typeof Alphasky.initResources === 'function') {
+            Alphasky.initResources();
+        }
+
+        if (typeof Alphasky !== 'undefined' && typeof Alphasky.initMediaIntegrate === 'function') {
+            Alphasky.initMediaIntegrate();
+        }
+
+        inlineForm.removeClass('dirty-check dirty');
+
+        if (typeof window.initSelectLevelFields === 'function') {
+            window.initSelectLevelFields(body);
+        }
+    }).finally(function () {
+        Alphasky.hideButtonLoading(button);
+    });
+});
+
+window.submitInlineCreateModalForm = function (form, submitButton) {
+    var modal = form.closest('[data-bb-inline-create-modal]');
+    var normalizeInlineCreateHtml = function (html) {
+        var wrapper = $('<div>').append($.parseHTML(html || '', document, false));
+        var bodyContent = wrapper.find('body');
+
+        if (bodyContent.length) {
+            wrapper = $('<div>').append(bodyContent.contents());
+        }
+
+        wrapper.find('script, title, meta, link[rel="stylesheet"]').remove();
+
+        return wrapper.contents();
+    };
+
+    form.removeClass('dirty-check dirty');
+    form.find(':input').attr('data-ays-ignore', '1');
+
+    Alphasky.showButtonLoading(submitButton);
+    $httpClient.make().postForm(form.prop('action'), new FormData(form[0])).then(function (response) {
+        Alphasky.showSuccess(response.data.message);
+
+        var refreshUrl = modal.data('refresh-url');
+        var target = modal.data('target');
+
+        if (refreshUrl && target) {
+            $httpClient.make().get(refreshUrl).then(function (refreshResponse) {
+                $(target).replaceWith(normalizeInlineCreateHtml((refreshResponse.data.data && refreshResponse.data.data.html) || refreshResponse.data.html || ''));
+            });
+        }
+
+        modal.modal('hide');
+        form[0].reset();
+    }).finally(function () {
+        Alphasky.hideButtonLoading(submitButton);
+    });
+};
+
+$(document).off('click.bb-inline-create-modal-submit', '[data-bb-inline-create-modal] button[type=submit]').on('click.bb-inline-create-modal-submit', '[data-bb-inline-create-modal] button[type=submit]', function (event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    window.submitInlineCreateModalForm($(this).closest('form'), $(this));
+});
+
+$(document).off('submit.bb-inline-create-modal', '[data-bb-inline-create-modal] form').on('submit.bb-inline-create-modal', '[data-bb-inline-create-modal] form', function (event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    var form = $(this);
+    var submitButton = form.find('button[type=submit]');
+
+    window.submitInlineCreateModalForm(form, submitButton);
+});
 

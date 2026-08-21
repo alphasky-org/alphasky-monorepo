@@ -8,7 +8,7 @@ use Alphasky\Base\Supports\Core;
 use Alphasky\Base\Supports\DashboardMenu as DashboardMenuSupport;
 use Alphasky\Base\Supports\Editor;
 use Alphasky\Base\Supports\PageTitle as PageTitleSupport;
-
+use Alphasky\ACL\Models\User;
 if (! function_exists('language_flag')) {
     function language_flag(?string $flag, ?string $name = null, int $width = 16): string
     {
@@ -126,5 +126,11 @@ if (! function_exists('package_path')) {
         $path = ltrim((string) $path, DIRECTORY_SEPARATOR);
 
         return base_path('vendor/alphasky' . ($path ? DIRECTORY_SEPARATOR . $path : ''));
+    }
+}
+
+if( ! function_exists('GetAllUserArray')){
+    function GetAllUserArray(){
+        return User::query()->pluck('first_name', 'id')->toArray();
     }
 }

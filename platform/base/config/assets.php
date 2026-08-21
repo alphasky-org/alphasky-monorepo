@@ -41,14 +41,14 @@ return [
                 'use_cdn'  => false,
                 'location' => 'footer',
                 'src'      => [
-                    'local' => '/vendor/core/core/base/js/core-ui.js',
+                    'local' => '/vendor/core/core/base/js/core-ui.js?v=1.0.1',
                 ],
             ],
             'core'               => [
                 'use_cdn'  => false,
                 'location' => 'footer',
                 'src'      => [
-                    'local' => '/vendor/core/core/base/js/core.js',
+                    'local' => '/vendor/core/core/base/js/core.js?v=1.0.1',
                 ],
             ],
             'report'             => [
@@ -72,7 +72,7 @@ return [
                     'local' => [
                         '/vendor/core/core/base/libraries/jquery.min.js',
                         '/vendor/core/core/base/libraries/jquery-compat/jquery4-compat.js',
-                        '/vendor/core/core/base/js/app.js',
+                        '/vendor/core/core/base/js/app.js?v=1.0.1',
                     ],
                 ],
                 'attributes' => [

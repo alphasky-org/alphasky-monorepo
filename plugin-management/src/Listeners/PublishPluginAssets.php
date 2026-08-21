@@ -17,6 +17,10 @@ class PublishPluginAssets
                 continue;
             }
 
+            if (! File::isDirectory($from)) {
+                continue;
+            }
+
             File::ensureDirectoryExists(dirname($to));
             File::copyDirectory($from, $to);
         }

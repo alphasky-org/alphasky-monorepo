@@ -420,11 +420,7 @@ class DashboardMenu
         $adminPrefix = BaseHelper::getAdminPrefix();
         $url = $item['url'];
 
-        $item['active'] = $currentUrl === $item['url']
-            || (
-                Str::contains($currentUrl, $url)
-                && $url !== url($adminPrefix)
-            );
+        $item['active'] = $this->isActiveUrl($currentUrl, $url, url($adminPrefix));
 
         if ($item['children']->isEmpty()) {
             return $item;
@@ -445,5 +441,21 @@ class DashboardMenu
         $item['children'] = collect($children);
 
         return $item;
+    }
+
+    protected function isActiveUrl(string $currentUrl, string $url, string $adminUrl): bool
+    {
+        $currentUrl = rtrim($currentUrl, '/');
+        $url = rtrim($url, '/');
+        $adminUrl = rtrim($adminUrl, '/');
+
+        if ($url === '' || $url === $adminUrl) {
+            return $currentUrl === $url;
+        }
+
+        return $currentUrl === $url
+            || Str::startsWith($currentUrl, $url . '/')
+            || Str::startsWith($currentUrl, $url . '?')
+            || Str::startsWith($currentUrl, $url . '#');
     }
 }

@@ -81,8 +81,30 @@ class Column extends BaseColumn
         $this->addClass('editable');
 
         if (is_string($isEditable)) {
-            $this->attributes['data-url'] = $isEditable;
+            $this->editableUrl($isEditable);
         }
+
+        return $this;
+    }
+
+    public function editableUrl(string $url): static
+    {
+        $this->attributes['data-url'] = $url;
+        $this->attributes['editableUrl'] = $url;
+
+        return $this;
+    }
+
+    public function editableType(string $type): static
+    {
+        $this->attributes['editableType'] = $type;
+
+        return $this;
+    }
+
+    public function editableSource(array|string $source): static
+    {
+        $this->attributes['editableSource'] = $source;
 
         return $this;
     }

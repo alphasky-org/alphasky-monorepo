@@ -513,6 +513,10 @@ class PluginService
 
     public static function getActivatedPlugins(): array
     {
+        if (env('ALPHASKY_GENERATED_PLUGIN_TESTING')) {
+            return [];
+        }
+
         if (self::$activatedPlugins && ! app()->runningInConsole()) {
             return self::$activatedPlugins;
         }

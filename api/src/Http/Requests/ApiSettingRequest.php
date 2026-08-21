@@ -34,11 +34,11 @@ class ApiSettingRequest extends Request
                 'example' => 'on',
             ],
             'fcm_project_id' => [
-                'description' => 'Firebase project ID',
+                'description' => 'Firebase project ID used by the push notification settings in the control panel',
                 'example' => 'my-firebase-project',
             ],
             'fcm_service_account_path' => [
-                'description' => 'Path to Firebase service account JSON file',
+                'description' => 'Path to the Firebase service account JSON file uploaded from the control panel',
                 'example' => 'firebase/service-account.json',
             ],
         ];

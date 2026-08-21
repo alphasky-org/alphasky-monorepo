@@ -44,6 +44,23 @@ class EnumColumn extends FormattedColumn implements FormattedColumnContract
     {
         $this->enum = $enum;
 
+        $this->editableType('select')
+            ->editableSource($this->getEditableSource());
+
         return $this;
+    }
+
+    protected function getEditableSource(): array
+    {
+        if (! $this->enum) {
+            return [];
+        }
+
+        $enumClass = is_string($this->enum) ? $this->enum : $this->enum::class;
+
+        return collect($enumClass::labels())
+            ->map(fn ($text, $value) => compact('value', 'text'))
+            ->values()
+            ->all();
     }
 }

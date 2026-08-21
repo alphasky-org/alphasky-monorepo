@@ -171,12 +171,28 @@ $(() => {
         .on('show.bs.modal', '.modal-confirm-delete', (event) => {
             $(event.currentTarget)
                 .find('[data-bb-toggle="modal-confirm-delete"]')
-                .attr('data-url', $(event.relatedTarget).data('url'))
+                .attr('data-url', $(event.relatedTarget).attr('data-url'))
+                .attr('data-refresh-url', $(event.relatedTarget).attr('data-refresh-url') || '')
+                .attr('data-target', $(event.relatedTarget).attr('data-target') || '')
         })
         .on('click', '[data-bb-toggle="modal-confirm-delete"]', (event) => {
             event.preventDefault()
 
             const button = $(event.currentTarget)
+            const refreshUrl = button.attr('data-refresh-url')
+            const target = button.attr('data-target')
+            const normalizeInlineListHtml = function (html) {
+                const wrapper = $('<div>').append($.parseHTML(html || '', document, false))
+                const bodyContent = wrapper.find('body')
+
+                if (bodyContent.length) {
+                    return bodyContent.contents()
+                }
+
+                wrapper.find('script, title, meta, link[rel="stylesheet"]').remove()
+
+                return wrapper.contents()
+            }
 
             $httpClient
                 .make()
@@ -184,6 +200,14 @@ $(() => {
                 .delete($(button).get(0).dataset.url)
                 .then(({ data }) => {
                     Alphasky.showSuccess(data.message)
+
+                    if (refreshUrl && target) {
+                        $httpClient.make().get(refreshUrl).then((refreshResponse) => {
+                            $(target).replaceWith(normalizeInlineListHtml((refreshResponse.data.data && refreshResponse.data.data.html) || refreshResponse.data.html || ''))
+                        })
+
+                        return
+                    }
 
                     reloadTree()
 

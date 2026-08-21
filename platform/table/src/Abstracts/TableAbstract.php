@@ -40,10 +40,10 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Conditionable;
 use LogicException;
-use stdClass;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\DataTableAbstract;
 use Yajra\DataTables\DataTables;
@@ -330,6 +330,10 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
 
     public function ajax(): JsonResponse
     {
+        if ($this->isEditableColumnRequest()) {
+            return $this->updateEditableColumn();
+        }
+
         if (isset($this->onAjaxCallback)) {
             return call_user_func($this->onAjaxCallback, $this);
         }
@@ -359,6 +363,8 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
             }
         }
 
+        $columns = $this->applyEditableUrl($columns);
+
         $columns = apply_filters(BASE_FILTER_TABLE_HEADINGS, $columns, $this->getModel(), $this);
 
         // TODO: Will be removed after operations removed.
@@ -379,6 +385,53 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
         }
 
         return $this->applyFilterVisibleColumns($columns);
+    }
+
+    protected function applyEditableUrl(array $columns): array
+    {
+        $editableUrl = $this->getEditableUrl();
+
+        if (! $editableUrl) {
+            return $columns;
+        }
+
+        foreach ($columns as $column) {
+            if (! $column instanceof Column) {
+                continue;
+            }
+
+            if (! Str::contains((string) $column->get('className'), 'editable') || $column->get('editableUrl')) {
+                continue;
+            }
+
+            $column->editableUrl($editableUrl);
+        }
+
+        return $columns;
+    }
+
+    protected function getEditableUrl(): ?string
+    {
+        $route = request()->route();
+        $routeName = $route?->getName();
+
+        if (! $routeName || ! Str::endsWith($routeName, '.index')) {
+            return null;
+        }
+
+        $editableRouteName = Str::beforeLast($routeName, '.index') . '.editable';
+
+        if (! Route::has($editableRouteName)) {
+            return null;
+        }
+
+        try {
+            $parameters = $route->parameters();
+        } catch (LogicException) {
+            $parameters = [];
+        }
+
+        return route($editableRouteName, $parameters, false);
     }
 
     /**
@@ -438,6 +491,80 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
         }
 
         return $this;
+    }
+
+    protected function isEditableColumnRequest(): bool
+    {
+        return (bool) $this->request()->input('_editable')
+            && $this->request()->input('name') !== null
+            && $this->request()->input('pk') !== null;
+    }
+
+    protected function updateEditableColumn(): JsonResponse
+    {
+        $columnName = (string) $this->request()->input('name');
+        $primaryKey = $this->request()->input('pk');
+
+        if (! $this->isEditableColumn($columnName)) {
+            return response()->json([
+                'error' => true,
+                'message' => trans('core/base::notices.error'),
+            ], 422);
+        }
+
+        $model = $this->getModel();
+
+        if ($columnName === $model->getKeyName() || ! $model->isFillable($columnName)) {
+            return response()->json([
+                'error' => true,
+                'message' => trans('core/base::notices.error'),
+            ], 422);
+        }
+
+        $item = $model->newQuery()->whereKey($primaryKey)->first();
+
+        if (! $item) {
+            return response()->json([
+                'error' => true,
+                'message' => trans('core/base::tables.no_record'),
+            ], 404);
+        }
+
+        $item->setAttribute($columnName, $this->request()->input('value'));
+        $item->save();
+
+        return response()->json([
+            'error' => false,
+            'message' => trans('core/base::notices.update_success_message'),
+        ]);
+    }
+
+    protected function isEditableColumn(string $columnName): bool
+    {
+        foreach ($this->getColumns() as $column) {
+            if (! $column instanceof Column) {
+                continue;
+            }
+
+            $columnData = $column->get('data') ?: $column->get('name');
+
+            if ($columnData === $columnName && Str::contains((string) $column->get('className'), 'editable')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function hasEditableColumns(): bool
+    {
+        foreach ($this->getColumns() as $column) {
+            if ($column instanceof Column && Str::contains((string) $column->get('className'), 'editable')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function removeColumn(string $name): static
@@ -698,6 +825,11 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
                 'vendor/core/core/table/js/filter.js',
             ]);
 
+        if ($this->hasEditableColumns()) {
+            Assets::addScripts(['bootstrap-editable'])
+                ->addStyles(['bootstrap-editable']);
+        }
+
         if (setting('datatables_pagination_type') == 'dropdown') {
             Assets::addScriptsDirectly(['vendor/core/core/base/libraries/datatables/extensions/Pagination/js/dataTables.pagination.min.js'])
                 ->addStylesDirectly(['vendor/core/core/base/libraries/datatables/extensions/Pagination/css/dataTables.pagination.min.css']);
@@ -889,7 +1021,7 @@ abstract class TableAbstract extends DataTable implements ExtensibleContract
                     break;
 
                 case $column instanceof Column && $column instanceof FormattedColumn:
-                    $table->editColumn($column->name, function (BaseModelContract|stdClass|array $item) use ($column) {
+                    $table->editColumn($column->name, function (BaseModelContract|\stdClass|array $item) use ($column) {
                         return $column->renderCell($item, $this);
                     });
 

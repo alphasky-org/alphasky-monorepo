@@ -29647,3 +29647,9 @@ button#ai-copilot-toggle-button img {
 .navbar-minimal .titlealphasky {
     display: none;
 }
+
+
+span.nav-link-icon i
+ {
+    font-size: 20px;
+}

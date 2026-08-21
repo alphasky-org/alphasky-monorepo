@@ -12,6 +12,12 @@
     @endforeach
 
     {{ $form->getCloseWrapperFormColumns() }}
+
+    @unless ($form->isWithoutActionButtons())
+        <div class="mt-3 text-end">
+            @include('core/base::forms.partials.form-buttons', ['onlySave' => true])
+        </div>
+    @endunless
 @endif
 
 @if ($showEnd)

@@ -41,9 +41,15 @@ class SelectBulkChange extends TableBulkChangeAbstract
     public function toArray(): array
     {
         $data = parent::toArray();
+        $choices = $this->choices ?? [];
 
         if (isset($this->callback)) {
             $data['callback'] = $this->callback;
+
+            $callbackChoices = call_user_func($this->callback);
+            if (is_array($callbackChoices)) {
+                $choices = $callbackChoices;
+            }
         } else {
             $data['choices'] = $this->choices;
         }
@@ -53,7 +59,14 @@ class SelectBulkChange extends TableBulkChangeAbstract
         }
 
         if (! isset($this->validate)) {
-            $data['validate'] = ['required', Rule::in(array_keys($this->choices))];
+            $allowedValues = array_keys($choices);
+
+            // Support non-associative options arrays by validating against values.
+            if ($allowedValues !== [] && $allowedValues === range(0, count($allowedValues) - 1)) {
+                $allowedValues = array_values($choices);
+            }
+
+            $data['validate'] = ['required', Rule::in($allowedValues)];
         }
 
         return $data;

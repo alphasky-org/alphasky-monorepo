@@ -16,6 +16,7 @@ class DateColumn extends FormattedColumn implements FormattedColumnContract
     {
         return parent::make($data, $name)
             ->type('date')
+            ->editableType('date')
             ->width(100)
             ->withEmptyState();
     }

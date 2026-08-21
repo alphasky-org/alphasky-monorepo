@@ -148,8 +148,13 @@ trait LoadAndPublishDataTrait
         }
 
         $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
+        $assetsPath = $this->getAssetsPath();
 
-        $this->publishes([$this->getAssetsPath() => public_path($path)], 'cms-public');
+        if (! File::isDirectory($assetsPath)) {
+            return $this;
+        }
+
+        $this->publishes([$assetsPath => public_path($path)], 'cms-public');
 
         return $this;
     }

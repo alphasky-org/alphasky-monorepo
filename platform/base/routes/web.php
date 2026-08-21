@@ -8,6 +8,7 @@ use Alphasky\Base\Http\Controllers\CoreIconController;
 use Alphasky\Base\Http\Controllers\NotificationController;
 use Alphasky\Base\Http\Controllers\SearchController;
 use Alphasky\Base\Http\Controllers\SystemInformationController;
+use Alphasky\Base\Http\Controllers\ToggleAdminLocaleController;
 use Alphasky\Base\Http\Controllers\ToggleThemeModeController;
 use Alphasky\Base\Http\Middleware\RequiresJsonRequestMiddleware;
 
@@ -46,9 +47,51 @@ Route::group(['namespace' => 'Alphasky\Base\Http\Controllers'], function (): voi
             'permission' => 'superuser',
         ]);
 
-        Route::get('system/alphasky', [            
+        Route::post('system/alphasky', [            
             'as'         => 'system.alphasky',
             'uses'       => 'SystemController@getAlphasky',
+            'permission' => 'superuser',
+        ]);
+
+        Route::post('system/alphasky-conversations', [
+            'as'         => 'system.alphasky-conversations',
+            'uses'       => 'SystemController@getAlphaskyConversations',
+            'permission' => 'superuser',
+        ]);
+
+        Route::post('system/alphasky-conversation', [
+            'as'         => 'system.alphasky-conversation',
+            'uses'       => 'SystemController@getAlphaskyConversation',
+            'permission' => 'superuser',
+        ]);
+
+        Route::post('system/alphasky-conversation-message', [
+            'as'         => 'system.alphasky-conversation-message',
+            'uses'       => 'SystemController@postAlphaskyConversationMessage',
+            'permission' => 'superuser',
+        ]);
+
+        Route::post('system/alphasky-answer', [
+            'as'         => 'system.alphasky-answer',
+            'uses'       => 'SystemController@postAlphaskyAnswer',
+            'permission' => 'superuser',
+        ]);
+
+        Route::post('system/alphasky-install-plugin', [
+            'as'         => 'system.alphasky-install-plugin',
+            'uses'       => 'SystemController@postAlphaskyInstallPlugin',
+            'permission' => 'superuser',
+        ]);
+
+        Route::post('system/alphasky-apply-plugin', [
+            'as'         => 'system.alphasky-apply-plugin',
+            'uses'       => 'SystemController@postAlphaskyApplyPlugin',
+            'permission' => 'superuser',
+        ]);
+
+        Route::post('system/alphasky-plugin-command', [
+            'as'         => 'system.alphasky-plugin-command',
+            'uses'       => 'SystemController@postAlphaskyPluginCommand',
             'permission' => 'superuser',
         ]);
 
@@ -123,6 +166,7 @@ Route::group(['namespace' => 'Alphasky\Base\Http\Controllers'], function (): voi
             );
 
             Route::get('toggle-theme-mode', [ToggleThemeModeController::class, '__invoke'])->name('toggle-theme-mode');
+            Route::get('toggle-admin-locale', [ToggleAdminLocaleController::class, '__invoke'])->name('toggle-admin-locale');
 
             Route::get('search', [SearchController::class, '__invoke'])->name('core.global-search');
 

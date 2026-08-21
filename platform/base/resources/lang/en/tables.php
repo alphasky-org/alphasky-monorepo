@@ -66,4 +66,5 @@ return [
     'checkbox' => 'Checkbox',
     'toggle_columns' => 'Toggle Columns',
     'created_by' => 'Created By',
+    'file' => 'File',
 ];
