@@ -29640,3 +29640,16 @@ span.nav-link-icon i
  {
     font-size: 20px;
 }
+.sidebar-toggler-wrapper.d-none.d-lg-block.mt-4 {
+    position: fixed;
+    bottom: 0;
+    width: 240px;
+    z-index: 9999;
+}
+
+.navbar-minimal .sidebar-toggler-wrapper.d-none.d-lg-block.mt-4 {
+    width: 52px;
+}
+.navbar .navbar-nav {
+    padding-bottom: 40px;
+}
