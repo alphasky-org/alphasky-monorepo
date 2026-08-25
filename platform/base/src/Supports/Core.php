@@ -321,6 +321,8 @@ final class Core
         try {
             $data = json_decode($this->files->get($this->coreDataFilePath), true) ?: [];
 
+            $data = $this->applyCoreUrlOverridesFromEnv($data);
+
             self::$coreFileData = $data;
 
             $this->cache->put('core_file_data', $data, Carbon::now()->addMinutes(30));
@@ -329,6 +331,20 @@ final class Core
         } catch (FileNotFoundException) {
             return [];
         }
+    }
+
+    private function applyCoreUrlOverridesFromEnv(array $data): array
+    {
+        $baseUrl = rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+
+        if ($baseUrl === '') {
+            return $data;
+        }
+
+        $data['apiUrl'] = $baseUrl . '/license';
+        $data['marketplaceUrl'] = $baseUrl . '/marketplace';
+
+        return $data;
     }
 
     private function getClientIpAddress(): string

@@ -50,7 +50,7 @@ class AccountController extends BaseController
             Auth::login($user);
 
             return redirect()
-                ->to(URL::temporarySignedRoute('installers.licenses.index', Carbon::now()->addMinutes(30)));
+                ->to(URL::temporarySignedRoute('installers.final', Carbon::now()->addMinutes(30)));
         } catch (Exception $exception) {
             return back()->withInput()->withErrors([
                 'first_name' => [$exception->getMessage()],

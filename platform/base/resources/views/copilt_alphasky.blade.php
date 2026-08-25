@@ -1199,17 +1199,18 @@
     </div>
 
     <div id="ai-copilot-panel-header" style="display:flex; flex-direction:column; gap:8px; padding:10px 12px; border-bottom:1px solid #e5e7eb; background:#fff;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; min-width:0;">
-            <span style="font-size:10px; font-weight:700; letter-spacing:.04em; color:#6b7280; text-transform:uppercase; line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">AI Alphasky Copilot</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;">
+            <span style="font-size: 12px;font-weight:700;letter-spacing:.04em;color:#6b7280;text-transform:uppercase;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align: center;display: block;">AI Alphasky Copilot</span>
             <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                <button id="ai-copilot-close-button" type="button" title="إغلاق" style="width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; border-radius:7px; background:#111827; color:#fff; cursor:pointer; font-size:16px; line-height:1;">
-                    <i class="fa fa-times"></i>
+                    <button id="ai-copilot-new-conversation-button" type="button" title="{{ __('core/base::system.alphasky_copilot.new_conversation') }}" style="width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; border-radius:7px; background:#f9fafb; color:#111827; cursor:pointer;">
+                    <i class="fa fa-plus"></i>
                 </button>
+               
                 <button id="ai-copilot-logout-button" type="button" title="تسجيل الخروج" style="width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; border-radius:7px; background:#f9fafb; color:#374151; cursor:pointer;">
                     <i class="fa fa-sign-out"></i>
                 </button>
-                <button id="ai-copilot-new-conversation-button" type="button" title="{{ __('core/base::system.alphasky_copilot.new_conversation') }}" style="width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border:1px solid #e5e7eb; border-radius:7px; background:#f9fafb; color:#111827; cursor:pointer;">
-                    <i class="fa fa-plus"></i>
+             <button id="ai-copilot-close-button" type="button" title="إغلاق" style="width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #e5e7eb;border-radius:7px;background:#111827;color:#fff;cursor:pointer;font-size:16px;line-height:1;z-index: 9999999;">
+                    <i class="fa fa-times"></i>
                 </button>
             </div>
         </div>

@@ -29502,7 +29502,7 @@ button#ai-copilot-toggle-button img {
 #ai-copilot-panel-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: normal;
     padding: 1rem;
     border-bottom: 1px solid #e9ecef;
     background-color: #f7f7f7;
@@ -29665,6 +29665,6 @@ span.nav-link-icon i
 .navbar-minimal .sidebar-toggler-wrapper.d-none.d-lg-block.mt-4 {
     width: 52px;
 }
-.navbar .navbar-nav {
+aside#sidebar-menu-main {
     padding-bottom: 40px;
 }

@@ -540,6 +540,11 @@ class SystemController extends BaseSystemController
         ];
     }
 
+    protected function resolveAlphaskyUpstreamBaseUrl(): string
+    {
+        return rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+    }
+
     protected function decodeServerSentEvent(string $event): ?array
     {
         $dataLines = [];

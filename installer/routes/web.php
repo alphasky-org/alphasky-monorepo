@@ -4,7 +4,6 @@ use Alphasky\Installer\Http\Controllers\AccountController;
 use Alphasky\Installer\Http\Controllers\EnvironmentController;
 use Alphasky\Installer\Http\Controllers\FinalController;
 use Alphasky\Installer\Http\Controllers\InstallController;
-use Alphasky\Installer\Http\Controllers\LicenseController;
 use Alphasky\Installer\Http\Controllers\RequirementController;
 use Alphasky\Installer\Http\Controllers\ThemeController;
 use Alphasky\Installer\Http\Controllers\ThemePresetController;
@@ -28,9 +27,6 @@ Route::group([
         Route::get('theme-presets', [ThemePresetController::class, 'index'])->name('theme-presets.index');
         Route::post('theme-presets', [ThemePresetController::class, 'store'])->name('theme-presets.store');
         Route::resource('accounts', AccountController::class)->only(['index', 'store']);
-        Route::resource('licenses', LicenseController::class)->only(['index', 'store']);
         Route::get('final', [FinalController::class, 'index'])->name('final');
-
-        Route::post('licenses/skip', [LicenseController::class, 'skip'])->name('licenses.skip');
     });
 });

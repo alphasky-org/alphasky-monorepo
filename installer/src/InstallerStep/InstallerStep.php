@@ -43,14 +43,10 @@ class InstallerStep
                 ->label(fn () => trans('packages/installer::installer.createAccount.title'))
                 ->route('installers.accounts.index')
                 ->priority(50),
-            'license' => InstallerStepItem::make()
-                ->label(fn () => trans('packages/installer::installer.license.title'))
-                ->route('installers.licenses.index')
-                ->priority(60),
             'final' => InstallerStepItem::make()
                 ->label(fn () => trans('packages/installer::installer.final.title'))
                 ->route('installers.final')
-                ->priority(70),
+                ->priority(60),
         ];
 
         if (InstallerStep::hasMoreThemes()) {
