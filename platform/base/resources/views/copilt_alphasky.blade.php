@@ -452,16 +452,18 @@
         }
 
         function sendPromptAnswer(requestId, answer) {
-            return fetch('{{ route('system.alphasky-answer') }}', {
+            return fetch('{{ rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/') . '/api/v1/prompt-answer' }}', {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken(),
+                    'X-API-KEY': 'Seec0aw0MUAB4ITMf6N1gp2TIEdhOXw6',
                 },
                 body: JSON.stringify({
                     request_id: requestId,
                     answer: answer,
+                    alphasky_key: (localStorage.getItem('alphaskyKey') || '').trim(),
+                    domain: window.location.hostname,
                 }),
             });
         }
@@ -581,6 +583,49 @@
                     window.location.reload();
                 }, 1200);
             }
+        }
+
+        async function handlePluginAsset(data) {
+            addMessage(i18n.executingPluginCommands, 'bot');
+
+            const assetResponse = await postJson('{{ route('system.alphasky-plugin-asset') }}', {
+                module_name: data.module_name,
+                path: data.path,
+                content: data.content,
+                encoding: data.encoding || 'base64',
+            });
+            const assetResult = await assetResponse.json().catch(() => ({}));
+
+            if (!assetResponse.ok || assetResult.error) {
+                throw new Error(assetResult.message || i18n.pluginCommandsFailed);
+            }
+
+            addMessage(assetResult.message || i18n.pluginCommandsSuccess, 'bot');
+        }
+
+        async function handleClientAiToolRequest(data) {
+            addMessage(i18n.executingPluginCommands, 'bot');
+
+            const toolResponse = await postJson('{{ route('system.alphasky-plugin-ai-tool') }}', {
+                tool: data.tool,
+                params: data.params || {},
+            });
+            const toolResult = await toolResponse.json().catch(() => ({}));
+
+            if (!toolResponse.ok || toolResult.error) {
+                throw new Error(toolResult.message || i18n.pluginCommandsFailed);
+            }
+
+            if (data.request_id) {
+                const answerResponse = await sendPromptAnswer(data.request_id, JSON.stringify(toolResult));
+                const answerResult = await answerResponse.json().catch(() => ({}));
+
+                if (!answerResponse.ok || answerResult.error) {
+                    throw new Error(answerResult.message || i18n.sendAnswerFailed);
+                }
+            }
+
+            addMessage(toolResult.message || i18n.pluginCommandsSuccess, 'bot');
         }
 
         function renderLocalPluginActionQuestion(pluginData) {
@@ -922,6 +967,22 @@
                     if (data.type === 'plugin_command') {
                         handlePluginCommand(data).catch((error) => {
                             console.error('Failed to run plugin command:', error);
+                            addMessage(error.message || i18n.pluginCommandsFailed, 'bot');
+                        });
+                        return;
+                    }
+
+                    if (data.type === 'plugin_asset') {
+                        handlePluginAsset(data).catch((error) => {
+                            console.error('Failed to write plugin asset:', error);
+                            addMessage(error.message || i18n.pluginCommandsFailed, 'bot');
+                        });
+                        return;
+                    }
+
+                    if (data.type === 'client_ai_tool_request') {
+                        handleClientAiToolRequest(data).catch((error) => {
+                            console.error('Failed to execute client AI tool:', error);
                             addMessage(error.message || i18n.pluginCommandsFailed, 'bot');
                         });
                         return;

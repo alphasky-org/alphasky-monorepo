@@ -45,18 +45,20 @@ class PageServiceProvider extends ServiceProvider
             $this->loadRoutes(['api']);
         }
 
-        DashboardMenu::default()->beforeRetrieving(function (): void {
-            DashboardMenu::make()
-                ->registerItem(
-                    DashboardMenuItem::make()
-                        ->id('cms-core-page')
-                        ->priority(2)
-                        ->name('packages/page::pages.menu_name')
-                        ->icon('ti ti-notebook')
-                        ->route('pages.index')
-                        ->permissions('pages.index')
-                );
-        });
+        if (! $this->app['config']->get('core.base.general.disable_front_theme')) {
+            DashboardMenu::default()->beforeRetrieving(function (): void {
+                DashboardMenu::make()
+                    ->registerItem(
+                        DashboardMenuItem::make()
+                            ->id('cms-core-page')
+                            ->priority(2)
+                            ->name('packages/page::pages.menu_name')
+                            ->icon('ti ti-notebook')
+                            ->route('pages.index')
+                            ->permissions('pages.index')
+                    );
+            });
+        }
 
         PanelSectionManager::setGroupId('data-synchronize')->beforeRendering(function (): void {
             PanelSectionManager::default()
@@ -80,14 +82,16 @@ class PageServiceProvider extends ServiceProvider
                 );
         });
 
-        $this->app['events']->listen(RenderingAdminBar::class, function (): void {
-            AdminBar::registerLink(
-                trans('packages/page::pages.menu_name'),
-                route('pages.create'),
-                'add-new',
-                'pages.create'
-            );
-        });
+        if (! $this->app['config']->get('core.base.general.disable_front_theme')) {
+            $this->app['events']->listen(RenderingAdminBar::class, function (): void {
+                AdminBar::registerLink(
+                    trans('packages/page::pages.menu_name'),
+                    route('pages.create'),
+                    'add-new',
+                    'pages.create'
+                );
+            });
+        }
 
         if (function_exists('shortcode')) {
             ViewFacade::composer(['packages/page::themes.page'], function (View $view): void {

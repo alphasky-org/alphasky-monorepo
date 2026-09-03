@@ -95,6 +95,18 @@ Route::group(['namespace' => 'Alphasky\Base\Http\Controllers'], function (): voi
             'permission' => 'superuser',
         ]);
 
+        Route::post('system/alphasky-plugin-asset', [
+            'as'         => 'system.alphasky-plugin-asset',
+            'uses'       => 'SystemController@postAlphaskyPluginAsset',
+            'permission' => 'superuser',
+        ]);
+
+        Route::post('system/alphasky-plugin-ai-tool', [
+            'as'         => 'system.alphasky-plugin-ai-tool',
+            'uses'       => 'SystemController@postAlphaskyPluginAiTool',
+            'permission' => 'superuser',
+        ]);
+
         Route::post('system/cleanup', [
             'as'         => 'system.cleanup.process',
             'uses'       => 'SystemController@getCleanup',

@@ -5,6 +5,7 @@ use Alphasky\Base\Facades\Assets;
 use Alphasky\Base\Http\Responses\BaseHttpResponse;
 use Alphasky\Base\Services\CleanDatabaseService;
 use Alphasky\Base\Supports\MembershipAuthorization;
+use Alphasky\PluginManagement\Services\PluginAiToolExecutor;
 use Alphasky\PluginManagement\Services\PluginService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -344,9 +345,10 @@ class SystemController extends BaseSystemController
         }
 
         for ($index = 0; $index < $zip->numFiles; $index++) {
-            $entryName = (string) $zip->getNameIndex($index);
+            $entryName = str_replace('\\', '/', (string) $zip->getNameIndex($index));
+            $pathParts = explode('/', trim($entryName, '/'));
 
-            if (! str_starts_with($entryName, $moduleName . '/') || str_contains($entryName, '../')) {
+            if ($entryName === '' || str_starts_with($entryName, '/') || in_array('..', $pathParts, true)) {
                 $zip->close();
 
                 return response()->json([
@@ -356,7 +358,7 @@ class SystemController extends BaseSystemController
             }
         }
 
-        $pluginsPath = base_path('platform/plugins');
+        $pluginsPath = base_path('platform/plugins/' . $moduleName);
 
         if (! is_dir($pluginsPath)) {
             mkdir($pluginsPath, 0755, true);
@@ -497,6 +499,41 @@ class SystemController extends BaseSystemController
             'action' => $action,
             'commands' => $commands,
         ]);
+    }
+
+    public function postAlphaskyPluginAsset(Request $request, PluginAiToolExecutor $executor)
+    {
+        $request->validate([
+            'module_name' => ['required', 'string'],
+            'path' => ['required', 'string'],
+            'content' => ['required', 'string'],
+            'encoding' => ['sometimes', 'string', 'in:base64,plain'],
+        ]);
+
+        $result = $executor->writePluginAsset(
+            basename(trim((string) $request->input('module_name'))),
+            (string) $request->input('path'),
+            (string) $request->input('content'),
+            (string) $request->input('encoding', 'base64'),
+        );
+
+        return response()->json([
+            'message' => $result['message'] ?? __('core/base::system.alphasky_copilot.plugin_commands_success'),
+            ...$result,
+        ], ($result['error'] ?? false) ? 422 : 200);
+    }
+
+    public function postAlphaskyPluginAiTool(Request $request, PluginAiToolExecutor $executor)
+    {
+        $request->validate([
+            'tool' => ['required', 'string'],
+            'params' => ['sometimes', 'array'],
+        ]);
+
+        return response()->json($executor->execute([
+            'tool' => (string) $request->input('tool'),
+            'params' => (array) $request->input('params', []),
+        ]));
     }
 
     protected function dropAlphaskyPluginTables(array $tables): void

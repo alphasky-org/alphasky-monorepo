@@ -15,6 +15,7 @@ class GeneralSettingRequest extends Request
             'admin_email' => ['nullable', 'array'],
             'admin_email.*' => ['nullable', 'email'],
             'time_zone' => Rule::in(DateTimeZone::listIdentifiers()),
+            'cms_only_backend_mode' => [new OnOffRule()],
             'enable_send_error_reporting_via_email' => [new OnOffRule()],
         ];
     }

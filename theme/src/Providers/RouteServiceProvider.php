@@ -46,7 +46,7 @@ class RouteServiceProvider extends ServiceProvider
                     return redirect()->route('access.login');
                 }
 
-                return response()->view('core/base::errors.403-api-mode', [], 403);
+                return redirect()->route('dashboard.index');
             })->name('public.index');
 
             Route::fallback(function () {
@@ -54,7 +54,7 @@ class RouteServiceProvider extends ServiceProvider
                     return redirect()->route('access.login');
                 }
 
-                return response()->view('core/base::errors.403-api-mode', [], 403);
+                return redirect()->route('dashboard.index');
             });
         });
     }

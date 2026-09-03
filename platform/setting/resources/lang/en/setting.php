@@ -26,6 +26,8 @@ return [
         ],
         'enable_send_error_reporting_via_email' => 'Send error reporting via email',
         'enable_send_error_reporting_via_email_helper' => 'When enabled, detailed error reports will be sent to the admin email addresses when critical errors occur on the site',
+        'only_backend_mode' => 'Only backend mode',
+        'only_backend_mode_helper' => 'Hide frontend management entries and redirect all public website routes to the admin dashboard.',
         'time_zone' => 'Timezone',
         'time_zone_helper' => 'Select the timezone for your website. This will be used for all date and time displays throughout the system',
         'enable' => 'Enable',

@@ -68,6 +68,12 @@ Route::group(['namespace' => 'Alphasky\PluginManagement\Http\Controllers'], func
                         'middleware' => 'preventDemo',
                     ]);
 
+                    Route::post('{id}/rebuild', [
+                        'as' => 'rebuild',
+                        'uses' => 'MarketplaceController@rebuild',
+                        'middleware' => 'preventDemo',
+                    ]);
+
                     Route::post('{id}/update/{name?}', [
                         'as' => 'update',
                         'uses' => 'MarketplaceController@update',

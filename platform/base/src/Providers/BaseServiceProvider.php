@@ -68,6 +68,8 @@ class BaseServiceProvider extends ServiceProvider
 
         $this->app->register(SettingServiceProvider::class);
 
+        $this->syncOnlyBackendModeConfig();
+
         $this->app->singleton(ExceptionHandler::class, Handler::class);
 
         $this->app->singleton(Breadcrumb::class);
@@ -145,6 +147,20 @@ class BaseServiceProvider extends ServiceProvider
 
             return $data . view('core/base::copilt_alphasky')->render();
         }, 20, 1);
+
+        add_filter('core_available_locales', function (array $languages): array {
+            $disabledLocales = setting('cms_disabled_locales', '[]');
+
+            if (is_string($disabledLocales)) {
+                $disabledLocales = json_decode($disabledLocales, true) ?: [];
+            }
+
+            foreach ((array) $disabledLocales as $locale) {
+                unset($languages[$locale]);
+            }
+
+            return $languages;
+        }, 20, 1);
     }
 
     protected function registerDashboardMenus(): void
@@ -168,6 +184,25 @@ class BaseServiceProvider extends ServiceProvider
                         ->icon('ti ti-tool')
                         ->permission('core.tools')
                 );
+        });
+
+        DashboardMenu::default()->beforeRetrieving(function (): void {
+            if (! $this->onlyBackendModeEnabled()) {
+                return;
+            }
+
+            DashboardMenu::make()->removeItem([
+                'cms-core-page',
+                'cms-core-appearance',
+                'cms-core-theme',
+                'cms-core-theme-option',
+                'cms-core-menu',
+                'cms-core-widget',
+                'cms-core-appearance-custom-css',
+                'cms-core-appearance-custom-js',
+                'cms-core-appearance-custom-html',
+                'cms-core-appearance-robots-txt',
+            ]);
         });
     }
 
@@ -323,6 +358,7 @@ class BaseServiceProvider extends ServiceProvider
 
         $timezone = $bootSettings['timezone'];
         $locale   = $bootSettings['locale'];
+        $onlyBackendMode = (bool) $setting->get('cms_only_backend_mode', $config->get('core.base.general.disable_front_theme', false));
 
         $this->app->setLocale($locale);
 
@@ -368,6 +404,7 @@ class BaseServiceProvider extends ServiceProvider
         $config->set([
             'app.locale'                        => $locale,
             'app.timezone'                      => $timezone,
+                        'core.base.general.disable_front_theme' => $onlyBackendMode,
             'purifier.settings'                 => [
                  ...$config->get('purifier.settings', []),
                 ...Arr::get($baseConfig, 'purifier', []),
@@ -383,6 +420,23 @@ class BaseServiceProvider extends ServiceProvider
             'excel.imports.ignore_empty' => true,
             'excel.imports.csv.input_encoding' => Arr::get($baseConfig, 'csv_import_input_encoding', 'UTF-8'),
         ]);
+    }
+
+    protected function syncOnlyBackendModeConfig(): void
+    {
+        try {
+            $this->getConfig()->set('core.base.general.disable_front_theme', $this->onlyBackendModeEnabled());
+        } catch (\Throwable) {
+            // Keep the static config value when settings are not available yet.
+        }
+    }
+
+    protected function onlyBackendModeEnabled(): bool
+    {
+        $config = $this->getConfig();
+        $setting = $this->app[SettingStore::class];
+
+        return (bool) $setting->get('cms_only_backend_mode', $config->get('core.base.general.disable_front_theme', false));
     }
 
     protected function overrideDebugbarConfig(): void

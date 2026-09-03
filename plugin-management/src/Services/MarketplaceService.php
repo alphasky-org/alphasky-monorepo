@@ -58,7 +58,10 @@ class MarketplaceService
         $response = $this->request()->{$method}($this->url . $path, $request);
 
         if ($response->failed()) {
-            throw new Exception($response->json('message') ?: trans('packages/plugin-management::marketplace.could_not_connect'));
+            throw new Exception(
+                $response->json('message') ?: trans('packages/plugin-management::marketplace.could_not_connect'),
+                $response->status()
+            );
         }
 
         return $response;

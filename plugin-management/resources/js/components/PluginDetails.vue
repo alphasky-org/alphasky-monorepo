@@ -9,12 +9,14 @@ export default defineComponent({
         },
     },
 
-    emits: ['back', 'install', 'uninstall', 'toggleActivation'],
+    emits: ['back', 'install', 'uninstall', 'toggleActivation', 'rebuild'],
 
     data() {
         return {
             isInstalled: false,
             isActivated: false,
+            editingSource: false,
+            sourceJson: '',
         }
     },
 
@@ -22,6 +24,7 @@ export default defineComponent({
         this.initModal()
         this.checkInstalled()
         this.checkActivated()
+        this.sourceJson = this.formattedSource
 
         $event.on('plugin-installed', (packageName) => {
             if (packageName === this.packageName) {
@@ -63,6 +66,24 @@ export default defineComponent({
             bootstrap.Modal.getInstance(this.$refs.modal).hide()
             this.$emit('install', $event, this.plugin.id)
         },
+        toggleSourceEditor() {
+            this.editingSource = !this.editingSource
+
+            if (this.editingSource) {
+                this.sourceJson = this.formattedSource
+            }
+        },
+        rebuild(event) {
+            try {
+                this.sourceJson = JSON.stringify(JSON.parse(this.sourceJson), null, 2)
+            } catch (error) {
+                Alphasky.showError(this.__('base.invalid_plugin_json'))
+
+                return
+            }
+
+            this.$emit('rebuild', event, this.plugin.id, this.sourceJson)
+        },
     },
 
     computed: {
@@ -73,6 +94,16 @@ export default defineComponent({
         },
         authorAvatar() {
             return `https://github.com/${this.plugin.author_name}.png`
+        },
+        canRebuild() {
+            return Boolean(this.plugin.can_rebuild)
+        },
+        formattedSource() {
+            try {
+                return JSON.stringify(JSON.parse(this.plugin.content), null, 2)
+            } catch (error) {
+                return this.plugin.content || ''
+            }
         },
     },
 })
@@ -88,27 +119,6 @@ export default defineComponent({
                             <h2 class="mb-1">{{ plugin.name }}</h2>
                             <p class="text-muted mb-0">{{ plugin.description }}</p>
                         </div>
-
-                        <a :href="plugin.url" target="_blank" class="btn me-5 d-none d-md-block">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="icon"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                stroke-width="2"
-                                stroke="currentColor"
-                                fill="none"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"></path>
-                                <path d="M11 13l9 -9"></path>
-                                <path d="M15 4h5v5"></path>
-                            </svg>
-                            {{ __('base.view_on_marketplace') }}
-                        </a>
 
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -229,7 +239,59 @@ export default defineComponent({
                     </div>
 
                     <div class="card card-lg" v-if="plugin.content">
-                        <div class="card-body markdown" v-html="plugin.content" />
+                        <div class="card-body" v-if="canRebuild">
+                            <textarea
+                                v-if="editingSource"
+                                v-model="sourceJson"
+                                class="form-control font-monospace"
+                                rows="20"
+                                spellcheck="false"
+                                dir="ltr"
+                            ></textarea>
+                            <pre v-else class="mb-0 overflow-auto text-start" dir="ltr"><code>{{ formattedSource }}</code></pre>
+                        </div>
+                        <div class="card-body markdown" v-else v-html="plugin.content" />
+                        <div class="card-footer d-flex flex-wrap gap-2" v-if="canRebuild">
+                            <button type="button" class="btn" @click="toggleSourceEditor">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="icon"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
+                                    <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-9.415 9.385v3h3l9.385 -9.415z"></path>
+                                    <path d="M16 5l3 3"></path>
+                                </svg>
+                                {{ editingSource ? __('base.cancel_editing') : __('base.edit_json') }}
+                            </button>
+                            <button type="button" class="btn btn-primary" @click="rebuild">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="icon"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"></path>
+                                    <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"></path>
+                                </svg>
+                                {{ __('base.rebuild_plugin') }}
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

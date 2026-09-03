@@ -38,6 +38,8 @@ class GeneralSettingController extends SettingController
 
         cache()->forget('core.base.boot_settings');
 
+        config()->set('core.base.general.disable_front_theme', (bool) ($data['cms_only_backend_mode'] ?? false));
+
         return $this->performUpdate($data);
     }
 

@@ -23,7 +23,7 @@
                 @include('core/base::global-search.navbar-input')
             </div>
 
-            @if (BaseHelper::getAdminPrefix() != '')
+            @if (BaseHelper::getAdminPrefix() != '' && ! config('core.base.general.disable_front_theme'))
                 <div class="nav-item d-none d-md-flex me-3">
                     <div class="btn-list">
                         <x-core::button

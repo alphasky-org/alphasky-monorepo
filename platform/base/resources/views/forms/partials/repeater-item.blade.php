@@ -1,7 +1,5 @@
 @php
-    if ($field['type'] === 'select') {
-        $field['type'] = 'customSelect';
-    }
+    $isSelect = $field['type'] === 'select';
 
     $hiddenField = Form::hidden($name . '[' . $index . '][' . $key . '][key]', $field['attributes']['name']);
     $field['attributes']['name'] = $name . '[' . $index . '][' . $key . '][value]';
@@ -9,6 +7,16 @@
     $field['attributes']['options']['id'] = $id = 'repeater_field_' . md5($field['attributes']['name']) . uniqid('_');
     $field['attributes']['id'] = $id;
     $field['attributes']['label_attr']['for'] = $id;
+
+    if ($isSelect) {
+        $field['type'] = 'customSelect';
+        $field['attributes'] = [
+            'name' => $field['attributes']['name'],
+            'choices' => $field['choices'] ?? [],
+            'selected' => $field['attributes']['value'],
+            'selectAttributes' => $field['attributes']['options'],
+        ];
+    }
 @endphp
 
 <x-core::form-group>

@@ -37,5 +37,9 @@ return [
     'unzip_success' => 'تم استخراج الملف',
     'install_success' => 'تم تثبيت البرنامج المساعد بنجاح!',
     'update_success' => 'تم تحديث البرنامج المساعد بنجاح!',
+    'edit_json' => 'تعديل',
+    'cancel_editing' => 'إلغاء التعديل',
+    'rebuild_plugin' => 'إعادة إنشاء الإضافة',
+    'invalid_plugin_json' => 'كود JSON الخاص بالإضافة غير صالح.',
     'minimum_core_version_error' => 'لا يمكن تثبيت هذا البرنامج المساعد. الحد الأدنى من الإصدار الأساسي هو :version.',
 ];

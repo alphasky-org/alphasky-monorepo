@@ -37,21 +37,32 @@ class MarketplaceController extends BaseController
        
         $this->pageTitle(trans('packages/plugin-management::plugin.plugins_add_new'));
 
+        $marketplaceAsset = 'vendor/core/packages/plugin-management/js/marketplace.js';
+
         Assets::usingVueJS()
-            ->addScriptsDirectly('vendor/core/packages/plugin-management/js/marketplace.js');
+            ->addScriptsDirectly($marketplaceAsset . '?v=' . filemtime(public_path($marketplaceAsset)));
 
         return view('packages/plugin-management::marketplace');
     }
 
     public function list(Request $request): array|BaseHttpResponse
     {
-        if (class_exists(Alphaskyplugin::class)) {
-            return $this->listLocalPlugins($request);
+        $request->merge([
+            'type' => 'plugin',
+            'alphasky_key' => trim((string) $request->header('X-Alphasky-Key', '')),
+        ]);
+
+        try {
+            $response = $this->marketplaceService->callApi('get', '/products', $request->input());
+        } catch (Throwable $exception) {
+            $statusCode = $exception->getCode();
+
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setCode($statusCode >= 400 && $statusCode < 600 ? $statusCode : 500)
+                ->setMessage($exception->getMessage());
         }
-
-        $request->merge(['type' => 'plugin']);
-
-        $response = $this->marketplaceService->callApi('get', '/products', $request->input());
 
         if ($response instanceof JsonResponse) {
             $data = $response->getData(true);
@@ -271,6 +282,64 @@ class MarketplaceController extends BaseController
                 'name' => $name,
                 'id' => $id,
             ]);
+    }
+
+    public function rebuild(Request $request, string $id): JsonResponse|BaseHttpResponse
+    {
+        $request->validate([
+            'json' => ['required'],
+        ]);
+
+        try {
+            $response = $this->marketplaceService->callApi('post', '/products/' . $id . '/rebuild', [
+                'json' => $request->input('json'),
+                'alphasky_key' => trim((string) $request->header('X-Alphasky-Key', '')),
+            ]);
+            $data = $response instanceof JsonResponse ? $response->getData(true) : $response->json();
+            $plugin = $data['data']['plugin'];
+            $rebuiltId = (string) $plugin['id'];
+            $name = Str::afterLast((string) $plugin['package_name'], '/');
+
+            if (in_array($name, PluginService::getInstalledPlugins(), true)) {
+                $result = $this->pluginService->updatePlugin($name, function () use ($rebuiltId, $name) {
+                    $this->marketplaceService->beginInstall($rebuiltId, $name, $this->pluginService);
+                    $this->pluginService->runMigrations($name);
+                    $published = $this->pluginService->publishAssets($name);
+
+                    if ($published['error']) {
+                        return response()->json($published);
+                    }
+
+                    $this->pluginService->publishTranslations($name);
+
+                    return response()->json(['error' => false]);
+                });
+
+                if ($result instanceof JsonResponse && $result->getData(true)['error'] ?? false) {
+                    return $result;
+                }
+            } else {
+                $this->marketplaceService->beginInstall($rebuiltId, $name, $this->pluginService);
+            }
+
+            return response()->json([
+                'error' => false,
+                'message' => (string) ($data['message'] ?? trans('packages/plugin-management::marketplace.install_success')),
+                'data' => [
+                    'plugin' => $plugin,
+                    'name' => $name,
+                    'created_copy' => (bool) ($data['data']['created_copy'] ?? false),
+                ],
+            ]);
+        } catch (Throwable $exception) {
+            $statusCode = $exception->getCode();
+
+            return $this
+                ->httpResponse()
+                ->setError()
+                ->setCode($statusCode >= 400 && $statusCode < 600 ? $statusCode : 500)
+                ->setMessage($exception->getMessage());
+        }
     }
 
     public function update(string $id, ?string $name = null): JsonResponse

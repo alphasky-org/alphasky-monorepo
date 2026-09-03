@@ -892,6 +892,10 @@ class Theme implements ThemeContract
 
     public function registerRoutes(Closure|callable $closure, array $middlewares = ['web', 'core']): Router
     {
+        if ($this->config->get('core.base.general.disable_front_theme')) {
+            return Route::group(['middleware' => $middlewares], fn () => null);
+        }
+
         return Route::group(['middleware' => $middlewares], function () use ($closure): void {
             Route::group(apply_filters(BASE_FILTER_GROUP_PUBLIC_ROUTE, []), fn () => $closure());
         });

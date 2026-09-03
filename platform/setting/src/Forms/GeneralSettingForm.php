@@ -46,6 +46,14 @@ class GeneralSettingForm extends SettingForm
                     ->helperText(trans('core/setting::setting.general.time_zone_helper'))
             )
             ->add(
+                'cms_only_backend_mode',
+                OnOffField::class,
+                OnOffFieldOption::make()
+                    ->label(trans('core/setting::setting.general.only_backend_mode'))
+                    ->value(setting('cms_only_backend_mode', false))
+                    ->helperText(trans('core/setting::setting.general.only_backend_mode_helper'))
+            )
+            ->add(
                 'enable_send_error_reporting_via_email',
                 OnOffField::class,
                 OnOffFieldOption::make()

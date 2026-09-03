@@ -125,6 +125,9 @@ export default defineComponent({
 
             $httpClient
                 .make()
+                .withHeaders({
+                    'X-Alphasky-Key': (localStorage.getItem('alphaskyKey') || '').trim(),
+                })
                 .get(this.pluginListUrl, { ...this.params })
                 .then(({ data }) => {
                     this.plugins = data.data
@@ -155,6 +158,34 @@ export default defineComponent({
         },
         install(event, id) {
             document.dispatchEvent(new CustomEvent('show-terms-and-policy-modal', { detail: { id } }))
+        },
+        rebuild(event, id, json) {
+            $httpClient
+                .make()
+                .withHeaders({
+                    'X-Alphasky-Key': (localStorage.getItem('alphaskyKey') || '').trim(),
+                })
+                .withButtonLoading(event.currentTarget)
+                .post(window.marketplace.route.rebuild.replace(':id', id), { json })
+                .then(({ data }) => {
+                    const plugin = data.data.plugin
+                    const index = this.plugins.findIndex((item) => item.id === plugin.id)
+
+                    if (index === -1) {
+                        this.plugins.unshift(plugin)
+                    } else {
+                        this.plugins.splice(index, 1, plugin)
+                    }
+
+                    this.showingPlugin = plugin
+
+                    if (!window.marketplace.installed.includes(data.data.name)) {
+                        window.marketplace.installed.push(data.data.name)
+                    }
+
+                    this.$nextTick(() => $event.emit('plugin-installed', data.data.name))
+                    Alphasky.showSuccess(data.message)
+                })
         },
         uninstall(event, plugin) {
             if (!confirm(this.__('This action will remove all data of this plugin. Are you sure you want continue?'))) {
@@ -1007,6 +1038,7 @@ export default defineComponent({
                 @install="install"
                 @uninstall="uninstall"
                 @toggle-activation="toggleActivation"
+                @rebuild="rebuild"
             />
         </template>
     </div>

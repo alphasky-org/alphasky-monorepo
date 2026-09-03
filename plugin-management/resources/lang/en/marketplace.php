@@ -37,5 +37,9 @@ return [
     'unzip_success' => 'Download file extracted',
     'install_success' => 'Installed plugin successfully!',
     'update_success' => 'Updated plugin successfully!',
+    'edit_json' => 'Edit',
+    'cancel_editing' => 'Cancel editing',
+    'rebuild_plugin' => 'Rebuild plugin',
+    'invalid_plugin_json' => 'The plugin JSON is invalid.',
     'minimum_core_version_error' => 'Cannot install this plugin. Minimum core version is :version.',
 ];
