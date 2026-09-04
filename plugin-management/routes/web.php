@@ -7,18 +7,18 @@ Route::group(['namespace' => 'Alphasky\PluginManagement\Http\Controllers'], func
     AdminHelper::registerRoutes(function (): void {
         Route::group(['prefix' => 'plugins'], function (): void {
 
+            Route::post('alphasky-monorepo/update', [
+                'as' => 'plugins.alphasky-monorepo.update',
+                'uses' => 'AlphaskyMonorepoUpdateController@update',
+                'middleware' => 'preventDemo',
+                'permission' => 'settings.options',
+            ]);
+
             if (config('packages.plugin-management.general.enable_plugin_manager', true)) {
                 Route::redirect('', 'plugins/installed');
                 Route::get('installed', [
                     'as' => 'plugins.index',
                     'uses' => 'PluginManagementController@index',
-                ]);
-
-                Route::post('alphasky-monorepo/update', [
-                    'as' => 'plugins.alphasky-monorepo.update',
-                    'uses' => 'AlphaskyMonorepoUpdateController@update',
-                    'middleware' => 'preventDemo',
-                    'permission' => 'settings.options',
                 ]);
 
                 Route::put('status', [
