@@ -10,6 +10,8 @@ use Alphasky\PluginManagement\Events\ActivatedPluginEvent;
 use Alphasky\PluginManagement\Events\UpdatedPluginEvent;
 use Alphasky\PluginManagement\Events\UpdatingPluginEvent;
 use Alphasky\PluginManagement\Listeners\ActivateAllPlugins;
+use Alphasky\PluginManagement\Listeners\AutoUpdateAlphaskyMonorepo;
+use Alphasky\PluginManagement\Listeners\AutoUpdateInstalledPlugins;
 use Alphasky\PluginManagement\Listeners\ClearPluginCaches;
 use Alphasky\PluginManagement\Listeners\CoreUpdatePluginsDB;
 use Alphasky\PluginManagement\Listeners\PublishPluginAssets;
@@ -26,7 +28,9 @@ class EventServiceProvider extends ServiceProvider
             CoreUpdatePluginsDB::class,
         ],
         SystemUpdatePublished::class => [
+            AutoUpdateAlphaskyMonorepo::class,
             PublishPluginAssets::class,
+            AutoUpdateInstalledPlugins::class,
         ],
         SeederPrepared::class => [
             ActivateAllPlugins::class,

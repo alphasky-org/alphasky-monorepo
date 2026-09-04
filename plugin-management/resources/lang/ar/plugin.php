@@ -40,6 +40,21 @@ return [
     'install' => 'تثبيت الآن',
     'install_plugin' => 'تثبيت البرنامج المساعد',
     'minimum_core_version_not_met' => 'الإضافة :plugin تتطلب نسخة نواة :minimum_core_version، بينما نسختك الحالية هي :current_core_version. يرجى التحديث لاستخدام هذه الإضافة.',
+    'alphasky_monorepo' => [
+        'title' => 'حزمة Alphasky',
+        'description' => 'فحص وتحديث ملفات الحزمة المشتركة vendor/alphasky.',
+        'current_version' => 'النسخة الحالية',
+        'latest_version' => 'آخر نسخة',
+        'unknown_version' => 'غير معروفة',
+        'unavailable_version' => 'غير متاحة',
+        'update_available' => 'يوجد تحديث جديد لحزمة Alphasky.',
+        'version_summary' => 'النسخة الحالية: :current. آخر نسخة: :latest.',
+        'go_to_settings' => 'الذهاب للإعدادات',
+        'update_now' => 'تحديث الآن',
+        'update_success' => 'تم تحديث حزمة Alphasky بنجاح إلى النسخة :version.',
+        'no_update' => 'أنت تستخدم آخر نسخة من حزمة Alphasky (:version).',
+        'not_git_repository' => 'لا يمكن التحديث تلقائياً لأن vendor/alphasky ليس مستودع Git.',
+    ],
     'enums' => [
         'plugin_filter_status' => [
             'all' => 'الجميع',

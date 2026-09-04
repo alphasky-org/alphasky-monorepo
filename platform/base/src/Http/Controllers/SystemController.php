@@ -217,6 +217,8 @@ class SystemController extends BaseSystemController
         ])->asJson()->post($upstreamBaseUrl . '/api/v1/prompt-answer', [
             'request_id' => $request->input('request_id'),
             'answer' => $request->input('answer'),
+            'alphasky_key' => $request->input('alphasky_key'),
+            'domain' => $request->input('domain'),
         ]);
 
         return response($upstreamResponse->body(), $upstreamResponse->status())

@@ -41,6 +41,21 @@ return [
     'install_plugin' => 'Install Plugin',
     'minimum_core_version_not_met' => 'Plugin :plugin requires :minimum_core_version version of core, but your core version is :current_core_version. Please upgrade your core to use this plugin!',
     'required_by_other_plugins' => 'Cannot deactivate plugin :plugin because it is required by other plugin(s): :required_by',
+    'alphasky_monorepo' => [
+        'title' => 'Alphasky Package',
+        'description' => 'Check and update the shared vendor/alphasky package files.',
+        'current_version' => 'Current version',
+        'latest_version' => 'Latest version',
+        'unknown_version' => 'Unknown',
+        'unavailable_version' => 'Unavailable',
+        'update_available' => 'A new Alphasky package update is available.',
+        'version_summary' => 'Current version: :current. Latest version: :latest.',
+        'go_to_settings' => 'Go to settings',
+        'update_now' => 'Update now',
+        'update_success' => 'Alphasky package updated successfully to version :version.',
+        'no_update' => 'You are using the latest Alphasky package version (:version).',
+        'not_git_repository' => 'Cannot update automatically because vendor/alphasky is not a Git repository.',
+    ],
     'enums' => [
         'plugin_filter_status' => [
             'all' => 'All',

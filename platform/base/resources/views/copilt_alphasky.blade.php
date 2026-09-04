@@ -452,12 +452,12 @@
         }
 
         function sendPromptAnswer(requestId, answer) {
-            return fetch('{{ rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/') . '/api/v1/prompt-answer' }}', {
+            return fetch('{{ route('system.alphasky-answer') }}', {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
-                    'X-API-KEY': 'Seec0aw0MUAB4ITMf6N1gp2TIEdhOXw6',
+                    'X-CSRF-TOKEN': csrfToken(),
                 },
                 body: JSON.stringify({
                     request_id: requestId,

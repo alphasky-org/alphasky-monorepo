@@ -14,6 +14,13 @@ Route::group(['namespace' => 'Alphasky\PluginManagement\Http\Controllers'], func
                     'uses' => 'PluginManagementController@index',
                 ]);
 
+                Route::post('alphasky-monorepo/update', [
+                    'as' => 'plugins.alphasky-monorepo.update',
+                    'uses' => 'AlphaskyMonorepoUpdateController@update',
+                    'middleware' => 'preventDemo',
+                    'permission' => 'settings.options',
+                ]);
+
                 Route::put('status', [
                     'as' => 'plugins.change.status',
                     'uses' => 'PluginManagementController@update',
