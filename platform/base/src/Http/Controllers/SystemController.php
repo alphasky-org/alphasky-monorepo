@@ -103,6 +103,14 @@ class SystemController extends BaseSystemController
         $upstreamUrl = $upstreamBaseUrl . '/api/v1/prompt';
         
         return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($userInput, $menuKey, $conversationToken, $surveysId, $alphaskyKey, $requestDomain, $upstreamBaseUrl, $upstreamUrl) {
+            echo ": alphasky-client-stream-open\n\n";
+
+            if (ob_get_level() > 0) {
+                ob_flush();
+            }
+
+            flush();
+
             $send = function (string $message, array $extra = []) use ($conversationToken) {
                 echo 'data: ' . json_encode(array_merge(['message' => $message, 'conversation_token' => $conversationToken], $extra), JSON_UNESCAPED_UNICODE) . "\n\n";
 
@@ -133,7 +141,7 @@ class SystemController extends BaseSystemController
                     'X-API-KEY' => 'Seec0aw0MUAB4ITMf6N1gp2TIEdhOXw6',
                 ])->timeout(0)->send('POST', $upstreamUrl, [
                     'stream' => true,
-                    'read_timeout' => 120,
+                    'read_timeout' => 0,
                     'form_params' => [
                         'userInput' => $userInput,
                         'key' => $menuKey,
@@ -199,7 +207,7 @@ class SystemController extends BaseSystemController
             }
         }, 200, [
             'Content-Type'      => 'text/event-stream; charset=UTF-8',
-            'Cache-Control'     => 'no-cache',
+            'Cache-Control'     => 'no-cache, no-transform',
             'Connection'        => 'keep-alive',
             'X-Accel-Buffering' => 'no', // Nginx Buffering Fix
         ]);
