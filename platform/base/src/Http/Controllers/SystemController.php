@@ -131,21 +131,18 @@ class SystemController extends BaseSystemController
                 $upstreamResponse = Http::withHeaders([
                     'Accept' => 'text/event-stream',
                     'X-API-KEY' => 'Seec0aw0MUAB4ITMf6N1gp2TIEdhOXw6',
-                ])->timeout(0)
-                    ->withOptions([
-                        'stream'      => true,
-                        'read_timeout' => 120,
-                    ])
-                    ->asForm()
-                    ->post($upstreamUrl, [
+                ])->timeout(0)->send('POST', $upstreamUrl, [
+                    'stream' => true,
+                    'read_timeout' => 120,
+                    'form_params' => [
                         'userInput' => $userInput,
-                        'key'       => $menuKey,
+                        'key' => $menuKey,
                         'surveys_id' => $surveysId,
                         'conversation_token' => $conversationToken,
-
                         'alphasky_key' => $alphaskyKey,
                         'domain' => $requestDomain,
-                    ]);
+                    ],
+                ]);
 
                 if (! $upstreamResponse->successful()) {
                     $send(__('core/base::system.alphasky_copilot.upstream_connection_failed'), [
@@ -155,6 +152,14 @@ class SystemController extends BaseSystemController
                     $send(__('core/base::system.alphasky_copilot.task_completed'));
 
                     return;
+                }
+
+                while (ob_get_level() > 0) {
+                    if (! (ob_get_status()['del'] ?? true)) {
+                        break;
+                    }
+
+                    @ob_end_flush();
                 }
 
                 $stream = $upstreamResponse->toPsrResponse()->getBody();
