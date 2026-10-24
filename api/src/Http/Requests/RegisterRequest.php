@@ -12,6 +12,7 @@ class RegisterRequest extends Request
     public function rules(): array
     {
         return [
+            'account_type' => [config('packages.api.api.account_type_required', false) ? 'required' : 'nullable', 'string', 'in:individual,company'],
             'first_name' => ['nullable', 'required_without:name', 'string', 'max:120', 'min:2'],
             'last_name' => ['nullable', 'required_without:name', 'string', 'max:120', 'min:2'],
             'name' => ['nullable', 'required_without:first_name', 'string', 'max:120', 'min:2'],
@@ -24,6 +25,10 @@ class RegisterRequest extends Request
     public function bodyParameters(): array
     {
         return [
+            'account_type' => [
+                'description' => 'The portal audience selected by the user',
+                'example' => 'individual',
+            ],
             'first_name' => [
                 'description' => 'The first name of the user',
                 'example' => 'John',

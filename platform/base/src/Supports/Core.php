@@ -335,7 +335,7 @@ final class Core
 
     private function applyCoreUrlOverridesFromEnv(array $data): array
     {
-        $baseUrl = rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+        $baseUrl = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
 
         if ($baseUrl === '') {
             return $data;

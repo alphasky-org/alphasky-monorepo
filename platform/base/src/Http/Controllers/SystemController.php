@@ -84,6 +84,23 @@ class SystemController extends BaseSystemController
     }
 
 
+    public function postAlphaskyLibrary(Request $request)
+    {
+        $data = $request->validate([
+            'action'=>'required|in:search,list,status,quote,urgent,wait',
+            'alphasky_key'=>'required|string|max:500', 'request_id'=>'nullable|uuid',
+            'quote_id'=>'nullable|uuid', 'query'=>'nullable|string|max:2000',
+        ]);
+        $data['domain'] = $request->getHost();
+        $base = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
+        try {
+            $upstream = \Illuminate\Support\Facades\Http::timeout(30)->withHeaders(['X-API-KEY'=>config('alphasky.api_key', env('ALPHASKY_API_KEY', ''))])->acceptJson()->post($base.'/api/v1/plugin-library', $data);
+            return response()->json($upstream->json() ?? ['error'=>'Invalid server response.'], $upstream->status());
+        } catch (\Throwable $e) {
+            return response()->json(['error'=>'تعذر الاتصال بألفاسكاي. حاول مجددًا.'], 502);
+        }
+    }
+
     public function getAlphasky(Request $request)
     {
         if (session()->isStarted()) {
@@ -99,7 +116,7 @@ class SystemController extends BaseSystemController
         $surveysId = (int) ($request->query('surveys_id', $request->input('surveys_id', 0)));
         $alphaskyKey = trim((string) ($request->query('alphasky_key', $request->input('alphasky_key', ''))));
         $requestDomain = trim((string) ($request->query('domain', $request->input('domain', $request->getHost()))));
-        $upstreamBaseUrl = rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+        $upstreamBaseUrl = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
         $upstreamUrl = $upstreamBaseUrl . '/api/v1/prompt';
         
         return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($userInput, $menuKey, $conversationToken, $surveysId, $alphaskyKey, $requestDomain, $upstreamBaseUrl, $upstreamUrl) {
@@ -215,7 +232,7 @@ class SystemController extends BaseSystemController
 
     public function postAlphaskyAnswer(Request $request)
     {
-        $upstreamBaseUrl = rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+        $upstreamBaseUrl = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
 
         if ($upstreamBaseUrl === '') {
             return response()->json([
@@ -240,7 +257,7 @@ class SystemController extends BaseSystemController
 
     public function getAlphaskyConversations(Request $request)
     {
-        $upstreamBaseUrl = rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+        $upstreamBaseUrl = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
         $alphaskyKey = trim((string) ($request->query('alphasky_key', $request->input('alphasky_key', ''))));
         $requestDomain = trim((string) ($request->query('domain', $request->input('domain', $request->getHost()))));
 
@@ -262,7 +279,7 @@ class SystemController extends BaseSystemController
 
     public function getAlphaskyConversation(Request $request)
     {
-        $upstreamBaseUrl = rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+        $upstreamBaseUrl = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
         $token = trim((string) ($request->query('token', $request->input('token', ''))));
         $alphaskyKey = trim((string) ($request->query('alphasky_key', $request->input('alphasky_key', ''))));
         $requestDomain = trim((string) ($request->query('domain', $request->input('domain', $request->getHost()))));
@@ -286,7 +303,7 @@ class SystemController extends BaseSystemController
 
     public function postAlphaskyConversationMessage(Request $request)
     {
-        $upstreamBaseUrl = rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+        $upstreamBaseUrl = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
         $action = trim((string) $request->input('action', ''));
         $alphaskyKey = trim((string) $request->input('alphasky_key', ''));
         $requestDomain = trim((string) ($request->input('domain', $request->getHost())));
@@ -319,7 +336,7 @@ class SystemController extends BaseSystemController
         ]);
 
         $moduleName = basename(trim((string) $request->input('module_name')));
-        $upstreamBaseUrl = rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+        $upstreamBaseUrl = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
 
         if ($upstreamBaseUrl === '') {
             return response()->json([
@@ -594,7 +611,7 @@ class SystemController extends BaseSystemController
 
     protected function resolveAlphaskyUpstreamBaseUrl(): string
     {
-        return rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/');
+        return rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
     }
 
     protected function decodeServerSentEvent(string $event): ?array

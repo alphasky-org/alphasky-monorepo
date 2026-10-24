@@ -24,6 +24,7 @@ class AuthenticationController extends BaseApiController
      * @bodyParam phone string required The phone of the user.
      * @bodyParam password string  required The password of user to create.
      * @bodyParam password_confirmation string  required The password confirmation.
+     * @bodyParam account_type string optional The selected portal audience (individual or company).
      *
      * @response {
      * "error": false,
@@ -80,6 +81,7 @@ class AuthenticationController extends BaseApiController
         $user->save();
 
         return $response
+            ->when($request->filled('account_type'), fn ($response) => $response->setData(['account_type' => $request->input('account_type')]))
             ->setMessage(__('Registered successfully! We emailed you to verify your account!'));
     }
 
@@ -88,6 +90,7 @@ class AuthenticationController extends BaseApiController
      *
      * @bodyParam email string required The email of the user.
      * @bodyParam password string required The password of user to create.
+     * @bodyParam account_type string optional The selected portal audience (individual or company).
      *
      * @response {
      * "error": false,
@@ -113,7 +116,10 @@ class AuthenticationController extends BaseApiController
             $token = $user->createToken($request->input('token_name', 'Personal Access Token'));
 
             return $response
-                ->setData(['token' => $token->plainTextToken]);
+                ->setData([
+                    'token' => $token->plainTextToken,
+                    ...($request->filled('account_type') ? ['account_type' => $request->input('account_type')] : []),
+                ]);
         }
 
         return $response

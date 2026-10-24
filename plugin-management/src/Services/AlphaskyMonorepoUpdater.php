@@ -18,13 +18,16 @@ class AlphaskyMonorepoUpdater
             'local_version' => $localVersion,
             'remote_version' => $remoteVersion,
             'update_available' => $remoteVersion !== '' && ($localVersion === '' || version_compare($remoteVersion, $localVersion, '>')),
-            'can_update' => is_dir($this->localPath() . '/.git'),
+            'can_update' => is_dir($this->localPath() . '/.git') && ! $this->hasLocalChanges(),
         ];
     }
 
     public function checkAndUpdate(): array
     {
         $localPath = $this->localPath();
+        if ($this->hasLocalChanges()) {
+            throw new \RuntimeException('Local Alphasky changes must be reviewed and merged before updating; automatic replacement was blocked.');
+        }
         $localVersion = $this->localVersion();
         $remoteVersion = $this->remoteVersion();
 
@@ -103,6 +106,19 @@ class AlphaskyMonorepoUpdater
 
             return '';
         }
+    }
+
+    protected function hasLocalChanges(): bool
+    {
+        if (! is_dir($this->localPath() . '/.git')) {
+            return true;
+        }
+        $process = new Process(['git', '-C', $this->localPath(), 'status', '--porcelain', '--untracked-files=all']);
+        $process->setTimeout(30);
+        $process->run();
+
+        // Fail closed when repository status cannot be verified.
+        return ! $process->isSuccessful() || trim($process->getOutput()) !== '';
     }
 
     protected function runGit(array $arguments, string $workingDirectory): void

@@ -468,6 +468,60 @@
             });
         }
 
+        const capabilityCards = new Map();
+        async function capabilityAction(action, requestId, quoteId) {
+            const httpResponse = await postJson('{{ route('system.alphasky-library') }}', {
+                action, request_id: requestId, quote_id: quoteId,
+                alphasky_key: (localStorage.getItem('alphaskyKey') || '').trim(),
+            });
+            const response = await httpResponse.json();
+            if (!httpResponse.ok && !response.error) throw new Error('تعذر تنفيذ الطلب');
+            if (response.error) throw new Error(typeof response.error === 'string' ? response.error : 'تعذر تنفيذ الطلب');
+            return response.data;
+        }
+        function renderCapability(data) {
+            let card = capabilityCards.get(data.request_id);
+            if (!card || !card.isConnected) {
+                card = document.createElement('div'); card.className = 'alert alert-info my-2';
+                ui.chatBody.appendChild(card); capabilityCards.set(data.request_id, card);
+            }
+            card.replaceChildren();
+            const text = document.createElement('p');
+            text.textContent = `${data.summary || ''} — ${data.message || ''} — رقم الطلب: ${data.request_id} — الحالة: ${data.status} — الموعد المستهدف: ${data.due_at || ''}`;
+            card.appendChild(text);
+            const status = document.createElement('p'); card.appendChild(status);
+            function button(label, handler) {
+                const b = document.createElement('button'); b.type='button'; b.className='btn btn-sm btn-outline-primary m-1'; b.textContent=label;
+                b.onclick=async()=>{ b.disabled=true; try { await handler(); } catch(e) { status.textContent=e.message; } finally { b.disabled=false; } };
+                card.appendChild(b); return b;
+            }
+            button('تحديث حالة الطلب', async()=>renderCapability(await capabilityAction('status',data.request_id)));
+            if (data.status === 'waiting') {
+                button('انتظار التطوير خلال ٤٨ ساعة أو أقل',async()=>{ await capabilityAction('wait',data.request_id); status.textContent='طلبك محفوظ؛ الموعد مستهدف وقد يتغير بحسب المتطلبات.'; });
+                button('عرض تكلفة التنفيذ العاجل', async()=>{
+                    const q=await capabilityAction('quote',data.request_id);
+                    status.textContent=`النموذج: ${q.model}. الحد الأعلى للحجز: ${q.max_units} وحدة من رصيد ألفاسكاي. تُعاد الوحدات غير المستخدمة، وعند فشل الاختبار يُعاد كامل الحجز. العرض صالح حتى ${q.expires_at}.`;
+                    card.querySelector('[data-urgent-confirm]')?.remove();
+                    const confirm=button('أوافق على التكلفة وأطلب التنفيذ',async()=>renderCapability(await capabilityAction('urgent',data.request_id,q.id)));
+                    confirm.dataset.urgentConfirm='1';
+                });
+            }
+            if (data.status === 'ready' && data.result?.package) {
+                button('تنزيل الإضافة وتجهيزها للتفعيل',async()=>{
+                    const fresh=await capabilityAction('status',data.request_id);
+                    await handlePluginPackage({...fresh.result.package, survey_id:fresh.result.survey_id, module_name:fresh.result.module_name});
+                });
+            }
+        }
+        async function loadCapabilityRequests() {
+            if (!isAlphaskyActivatedForCapabilities()) return;
+            try { const rows=await capabilityAction('list'); rows.forEach(renderCapability); } catch(e) { console.warn('Capability requests unavailable'); }
+        }
+        function isAlphaskyActivatedForCapabilities() { return !!localStorage.getItem('alphaskyKey'); }
+        // Requests persist independently of a streaming conversation or browser session.
+        const requestsButton=document.createElement('button'); requestsButton.type='button'; requestsButton.className='btn btn-sm btn-outline-secondary m-2'; requestsButton.textContent='طلبات تطوير الإضافات';
+        requestsButton.onclick=loadCapabilityRequests; ui.chatBody.parentElement.appendChild(requestsButton);
+
         function postJson(url, payload) {
             return fetch(url, {
                 method: 'POST',
@@ -805,7 +859,7 @@
             ui.activationStatus.textContent = '';
         }
         async function requestActivation(key) {
-            const response = await fetch(`{{ rtrim((string) env('SERVER_ALPHASKY_URL', ''), '/') . '/api/v1/activatekey' }}?key=${encodeURIComponent(key)}`, {
+            const response = await fetch(`{{ rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/') . '/api/v1/activatekey' }}?key=${encodeURIComponent(key)}`, {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
@@ -933,6 +987,8 @@
 
             try {
                 const handleStreamMessage = (data) => {
+            if (data.type === 'capability_request') { renderCapability(data); return; }
+
                     if (data.token_count !== undefined) {
                         updateTokenBalance(data.token_count);
                     }
@@ -1013,8 +1069,12 @@
 
                 console.error('Error:', error);
                 lastBotMsg.textContent = i18n.connectionError;
+            } finally {
+                // Stream completion is a protocol event, independent of translated text.
+                clearWorkingMessage();
                 activeEventSource = null;
                 setTaskRunning(false);
+                loadConversations(activeConversationToken).catch(console.error);
             }
 
             ui.input.value = '';
