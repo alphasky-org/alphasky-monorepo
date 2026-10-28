@@ -2,6 +2,13 @@
 
 All notable changes to the monorepo are documented in this file.
 
+## [1.1.0] - 2026-10-29
+
+- Add server-side, per-site activation/library connection using a private configuration token, with identity allowlists and secret-free activation results.
+- Add website design plan ownership, dependency, revision and approval validation; edits invalidate approval.
+- Document the shared-wallet reservation and authoritative usage settlement contract. This foundation does not expose a designer endpoint or enable generation, billing or urgent execution.
+- Add regression checks for cross-site/owner approval, stale revisions, modified plans and connection credential isolation.
+
 ## [1.0.5] - 2026-10-24
 
 - Add the customer capability-request UI and authenticated server proxy for plugin development requests.

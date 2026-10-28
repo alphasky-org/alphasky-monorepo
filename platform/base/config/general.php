@@ -1,6 +1,10 @@
 <?php
 
 return [
+    // Server-side site token; never sent to browser storage.
+    'website_design' => [
+        'activation_token' => env('ALPHASKY_SITE_TOKEN'),
+    ],
     'admin_dir' => env('ADMIN_DIR', 'admin'),
     'disable_front_theme' => env('CMS_DISABLE_FRONT_THEME', false),
     'base_name' => env('APP_NAME', 'Alphasky Technologies'),
