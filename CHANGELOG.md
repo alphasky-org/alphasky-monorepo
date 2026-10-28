@@ -2,6 +2,13 @@
 
 All notable changes to the monorepo are documented in this file.
 
+## [1.2.0] - 2026-10-29
+
+- Add a reusable Arabic/English guided website interview with branching questions for informational sites, catalogues, stores and appointments.
+- Produce reviewable requirements and stages; preserve relevant answers when editing and discard obsolete dependent choices.
+- Keep this guided interview independent of paid AI generation and installation.
+- Test five complete interview branches and language consistency.
+
 ## [1.1.0] - 2026-10-29
 
 - Add server-side, per-site activation/library connection using a private configuration token, with identity allowlists and secret-free activation results.
