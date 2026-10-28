@@ -15,3 +15,12 @@ Before any billable planning or build request: authenticate owner, snapshot the 
 Prices must be configured per provider/model and input/output/cached tokens as applicable, with integer monetary subunits and deterministic rounding. Missing prices disable billing rather than assume a conversion. Failed calls may still incur provider usage; customer charging policy must be explicit. Legacy `token_count` alone cannot represent all model costs and must not authorize an unfunded operation.
 
 All calls, including planning, refinement, JSON repair and generation, belong to the operation ledger. Urgent direct-code execution remains phase two. No wallet debits are introduced by this foundation release.
+
+
+## Central design client (1.3.0)
+
+`DesignSiteClient` runs as the customer site Unix user through a trusted hosting broker. The broker resolves the site and owner, admits a wallet operation, and supplies server URL, gateway key, site token and a short-lived operation HMAC on stdin. Never accept these values or installation paths from a browser. Generate first, recheck ownership, then request the immutable result and install it. Central history and usage remain authoritative.
+
+`DesignPublisher` publishes a generated frontend shortcode as the homepage and applies validated hex colors and re-encoded PNG/JPEG/WebP logos. The previous homepage ID and module files are retained. An interrupted install requires reconciliation; SQL migrations are not claimed to be automatically reversible.
+
+The client requires `/api/v1/website-design` on the configured central server and does not substitute for that service. `SiteConnection` keeps its existing restricted activation/library contract.

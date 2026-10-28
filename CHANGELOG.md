@@ -1,3 +1,10 @@
+# 1.3.0 — 2026-10-29
+
+- Add a server-side website design client for central conversations, metered operation admission, immutable module packages and deployment reporting.
+- Verify package hashes and archive paths, retain prior module files, and prevent blind replay of interrupted installation.
+- Add homepage publication from generated shortcodes and validated logo/color updates. Credentials remain server-side; callers must verify site ownership before generation and again before installation.
+- Include credential isolation, TLS and package validation tests. The hosting application supplies a trusted job broker and the central design API; this release does not expose an unauthenticated browser endpoint.
+
 # Changelog
 
 All notable changes to the monorepo are documented in this file.
