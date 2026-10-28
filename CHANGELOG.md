@@ -1,3 +1,10 @@
+# Changelog
+
+## 1.3.1 — 2026-10-29
+
+- Create the plugin directory safely on fresh CMS sites before installing a design module.
+- Preserve existing plugin files when backup or move fails, and mark failed install receipts for reconciliation.
+
 # 1.3.0 — 2026-10-29
 
 - Add a server-side website design client for central conversations, metered operation admission, immutable module packages and deployment reporting.
