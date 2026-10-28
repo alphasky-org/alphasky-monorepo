@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.2 — 2026-10-29
+
+- Update already active design modules without attempting to activate them again; keep migrations and asset publishing.
+
+
 ## 1.3.1 — 2026-10-29
 
 - Create the plugin directory safely on fresh CMS sites before installing a design module.
