@@ -1,4 +1,4 @@
-@if(auth()->check() && auth()->user()->isSuperUser() && env('enable_ai_copilot', false) && env('copilot_user_id') == auth()->id())
+@if(auth()->check() && auth()->user()->isSuperUser() && config('core.base.general.copilot.enabled', false) && config('core.base.general.copilot.user_id') == auth()->id())
 <style>
     .bot-message.ai-copilot-working-message {
       position: relative;
@@ -186,7 +186,10 @@
             };
         }
 
+        const serverActivation = @json((bool) config('core.base.general.website_design.activation_token'));
+
         function isActivated() {
+            if (serverActivation) return true;
             const activateAlphasky = localStorage.getItem('activateAlphasky');
             const alphaskyKey = (localStorage.getItem('alphaskyKey') || '').trim();
 
@@ -888,6 +891,7 @@
         }
 
         async function verifyStoredActivation() {
+            if (serverActivation) return true;
             const storedKey = (localStorage.getItem('alphaskyKey') || '').trim();
 
             if (!storedKey) {

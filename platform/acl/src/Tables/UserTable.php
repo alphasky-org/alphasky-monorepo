@@ -135,9 +135,9 @@ class UserTable extends TableAbstract
                 if (! Auth::guard()->user()->isSuperUser()) {
                     $query->where('super_user', false);
                 }else{
-                    if(env('copilot_user_id') && env('copilot_user_id') != Auth::guard()->user()->id){
+                    if(config('core.base.general.copilot.user_id') && config('core.base.general.copilot.user_id') != Auth::guard()->user()->id){
 
-                    $query->where('id','!=', env('copilot_user_id'));
+                    $query->where('id','!=', config('core.base.general.copilot.user_id'));
                     }
 
                 }

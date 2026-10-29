@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.5 — 2026-10-29
+
+- Read Copilot enablement and owner ID from cached configuration; enabling Copilot no longer enables production debugging.
+- Managed sites use their server-held activation token and configured site identity for the plugin marketplace and Copilot. No token is exposed to browser storage.
+- Preserve manual activation for sites without a managed connection.
+- Regression coverage for managed marketplace identity and legacy activation.
+
 ## 1.3.4 — 2026-10-29
 
 - Add an opt-in command for Runure-managed hourly package updates and show managed-update status in Settings.

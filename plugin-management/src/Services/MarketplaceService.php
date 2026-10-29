@@ -32,7 +32,9 @@ class MarketplaceService
         
         $core = Core::make()->getCoreFileData();
 
-        $this->url = $url ?? $core['marketplaceUrl'];
+        $managed = (string) config('core.base.general.website_design.activation_token', '');
+        $server = rtrim((string) config('alphasky.server_url', ''), '/');
+        $this->url = $url ?? ($managed !== '' && $server !== '' ? $server . '/marketplace' : $core['marketplaceUrl']);
 
         $this->token = $token ?? $core['marketplaceToken'];
 
@@ -49,9 +51,15 @@ class MarketplaceService
     {
         abort_unless(config('packages.plugin-management.general.enable_marketplace_feature'), 404);
 
+        // Server-held site credentials take precedence over browser input.
+        $siteToken = (string) config('core.base.general.website_design.activation_token', '');
+        if ($siteToken !== '') {
+            $request['alphasky_key'] = $siteToken;
+            $request['domain'] = parse_url(config('app.url'), PHP_URL_HOST);
+        }
         $request = array_merge($request, [
             'product_id' => $this->productId,
-            'site_url' => rtrim(url('')),
+            'site_url' => $siteToken !== '' ? rtrim(config('app.url'), '/') : rtrim(url('')),
             'core_version' => get_core_version(),
         ]);
 

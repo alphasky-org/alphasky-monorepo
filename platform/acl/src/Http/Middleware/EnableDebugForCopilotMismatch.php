@@ -16,11 +16,7 @@ class EnableDebugForCopilotMismatch
             return redirect()->route('access.login')->with('error_msg', trans('core/acl::auth.back_to_login'));
          }
            
-        $copilotUserId = env('copilot_user_id');
-        $currentUserId = Auth::guard()->id();
-        if ($copilotUserId && $currentUserId && $copilotUserId == $currentUserId) {
-        config(['app.debug' => true]);
-        }
+        // Copilot access must never enable production debug output.
 
         return $next($request);
     }

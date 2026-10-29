@@ -2,6 +2,10 @@
 
 return [
     // Server-side site token; never sent to browser storage.
+    'copilot' => [
+        'enabled' => env('enable_ai_copilot', false),
+        'user_id' => env('copilot_user_id'),
+    ],
     'website_design' => [
         'activation_token' => env('ALPHASKY_SITE_TOKEN'),
     ],
