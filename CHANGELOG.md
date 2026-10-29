@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.4 — 2026-10-29
+
+- Add an opt-in command for Runure-managed hourly package updates and show managed-update status in Settings.
+- Serialize updates, preserve a previous Git reference, use fast-forward-only updates, and never delete untracked files. Report local changes and permissions accurately.
+- Managed provisioning must preserve a clean public monorepo checkout; legacy non-Git copies require a verified migration before automatic updates.
+
 ## 1.3.3 — 2026-10-29
 
 - Link the locally cached font stylesheet by default instead of embedding every font weight and Unicode subset in each HTML response. Preserve explicit inline rendering and provider fallback.

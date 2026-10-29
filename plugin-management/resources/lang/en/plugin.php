@@ -42,6 +42,10 @@ return [
     'minimum_core_version_not_met' => 'Plugin :plugin requires :minimum_core_version version of core, but your core version is :current_core_version. Please upgrade your core to use this plugin!',
     'required_by_other_plugins' => 'Cannot deactivate plugin :plugin because it is required by other plugin(s): :required_by',
     'alphasky_monorepo' => [
+        'managed_updates' => 'Runure manages automatic package updates for this website. Updates are checked hourly.',
+        'local_changes' => 'Local package changes need review before updating. Your changes have been preserved.',
+        'not_writable' => 'The package files are not writable. Contact support to restore update access.',
+
         'title' => 'Alphasky Package',
         'description' => 'Check and update the shared vendor/alphasky package files.',
         'current_version' => 'Current version',

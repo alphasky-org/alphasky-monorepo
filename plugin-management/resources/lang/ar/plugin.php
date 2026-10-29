@@ -41,6 +41,10 @@ return [
     'install_plugin' => 'تثبيت البرنامج المساعد',
     'minimum_core_version_not_met' => 'الإضافة :plugin تتطلب نسخة نواة :minimum_core_version، بينما نسختك الحالية هي :current_core_version. يرجى التحديث لاستخدام هذه الإضافة.',
     'alphasky_monorepo' => [
+        'managed_updates' => 'يتولى رنور تحديث حزمة هذا الموقع تلقائيًا، مع فحص التحديثات كل ساعة.',
+        'local_changes' => 'توجد تعديلات محلية على الحزمة تحتاج مراجعة قبل التحديث. تم الحفاظ على تعديلاتك.',
+        'not_writable' => 'لا تتوفر صلاحية الكتابة على ملفات الحزمة. تواصل مع الدعم لاستعادة إمكانية التحديث.',
+
         'title' => 'حزمة Alphasky',
         'description' => 'فحص وتحديث ملفات الحزمة المشتركة vendor/alphasky.',
         'current_version' => 'النسخة الحالية',

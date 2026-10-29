@@ -4,6 +4,10 @@
         <p class="text-muted mb-0">{{ trans('packages/plugin-management::plugin.alphasky_monorepo.description') }}</p>
     </div>
 
+    @if ($status['managed_updates'] ?? false)
+        <p class="text-muted mb-0">{{ trans('packages/plugin-management::plugin.alphasky_monorepo.managed_updates') }}</p>
+    @endif
+
     <div class="row g-3">
         <div class="col-12 col-md-6">
             <div class="text-muted small">{{ trans('packages/plugin-management::plugin.alphasky_monorepo.current_version') }}</div>
@@ -44,7 +48,7 @@
                 type="danger"
                 class="mb-0"
             >
-                {{ trans('packages/plugin-management::plugin.alphasky_monorepo.not_git_repository') }}
+                {{ trans('packages/plugin-management::plugin.alphasky_monorepo.' . ($status['blocked_reason'] ?? 'not_git_repository')) }}
             </x-core::alert>
         @endif
     @else

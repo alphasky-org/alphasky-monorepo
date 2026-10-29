@@ -14,15 +14,38 @@ class AlphaskyMonorepoUpdater
         $localVersion = $this->localVersion();
         $remoteVersion = $this->remoteVersion();
 
+        $blockedReason = $this->blockedReason();
+
         return [
             'local_version' => $localVersion,
             'remote_version' => $remoteVersion,
             'update_available' => $remoteVersion !== '' && ($localVersion === '' || version_compare($remoteVersion, $localVersion, '>')),
-            'can_update' => is_dir($this->localPath() . '/.git') && ! $this->hasLocalChanges(),
+            'can_update' => $blockedReason === null,
+            'blocked_reason' => $blockedReason,
+            'managed_updates' => (bool) config('packages.plugin-management.general.alphasky_monorepo.managed_updates', false),
         ];
     }
 
     public function checkAndUpdate(): array
+    {
+        $reason = $this->blockedReason();
+        if ($reason !== null) {
+            throw new \RuntimeException(trans('packages/plugin-management::plugin.alphasky_monorepo.' . $reason));
+        }
+        $lock = fopen($this->localPath() . '/.git/alphasky-update.lock', 'c');
+        if (! $lock || ! flock($lock, LOCK_EX | LOCK_NB)) {
+            if ($lock) fclose($lock);
+            throw new \RuntimeException('An Alphasky update is already running.');
+        }
+        try {
+            return $this->updateCleanRepository();
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    protected function updateCleanRepository(): array
     {
         $localPath = $this->localPath();
         if ($this->hasLocalChanges()) {
@@ -59,12 +82,13 @@ class AlphaskyMonorepoUpdater
         }
 
         $this->runGit(['remote', 'set-url', 'origin', $this->repositoryUrl()], $localPath);
-        $this->runGit(['fetch', '--depth=1', 'origin', $this->branch()], $localPath);
-        $this->runGit(['reset', '--hard', 'FETCH_HEAD'], $localPath);
-
-        if (config('packages.plugin-management.general.alphasky_monorepo.clean_untracked', true)) {
-            $this->runGit(['clean', '-fd'], $localPath);
+        $this->runGit(['fetch', 'origin', $this->branch()], $localPath);
+        if ($this->hasLocalChanges()) {
+            throw new \RuntimeException('Local Alphasky changes appeared during the update; update stopped.');
         }
+        $this->runGit(['update-ref', 'refs/alphasky/previous', 'HEAD'], $localPath);
+        $this->runGit(['merge', '--ff-only', 'FETCH_HEAD'], $localPath);
+
 
         return [
             'updated' => true,
@@ -106,6 +130,14 @@ class AlphaskyMonorepoUpdater
 
             return '';
         }
+    }
+
+    protected function blockedReason(): ?string
+    {
+        if (! is_dir($this->localPath() . '/.git')) return 'not_git_repository';
+        if ($this->hasLocalChanges()) return 'local_changes';
+        if (! is_writable($this->localPath()) || ! is_writable($this->localPath() . '/.git')) return 'not_writable';
+        return null;
     }
 
     protected function hasLocalChanges(): bool

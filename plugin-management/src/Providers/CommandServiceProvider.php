@@ -37,6 +37,7 @@ class CommandServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
+                \Alphasky\PluginManagement\Commands\AlphaskyPackageUpdateCommand::class,
                 PluginAssetsPublishCommand::class,
                 ClearCompiledCommand::class,
                 PluginDiscoverCommand::class,
