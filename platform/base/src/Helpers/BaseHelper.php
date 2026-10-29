@@ -508,7 +508,7 @@ class BaseHelper
         return $url . '/' . ltrim($path, '/');
     }
 
-    public function googleFonts(string $font, bool $inline = true)
+    public function googleFonts(string $font, bool $inline = false)
     {
         if (! config('core.base.general.google_fonts_enabled', true)) {
             return '';

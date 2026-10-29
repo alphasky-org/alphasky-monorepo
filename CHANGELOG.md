@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.3 — 2026-10-29
+
+- Link the locally cached font stylesheet by default instead of embedding every font weight and Unicode subset in each HTML response. Preserve explicit inline rendering and provider fallback.
+
+
 ## 1.3.2 — 2026-10-29
 
 - Update already active design modules without attempting to activate them again; keep migrations and asset publishing.
