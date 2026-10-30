@@ -14,5 +14,13 @@ try{
  $file=$dir.'/unsafe.zip';$z=new ZipArchive();$z->open($file,ZipArchive::CREATE);$z->addFromString('../escape.php','<?php echo 1;');$z->close();$bytes=file_get_contents($file);Http::swap(new Illuminate\Http\Client\Factory());Http::preventStrayRequests();Http::fake(['https://builder.example/api/v1/plugin-package/*'=>Http::response($bytes)]);$p['sha256']=hash('sha256',$bytes);rejects(fn()=>$client->install($module,$p),'unsafe_archive');ok(!is_file($dir.'/escape.php'));
  rejects(fn()=>$client->install('../escape',$p),'invalid_release');$p['path']='https://attacker.example/package';rejects(fn()=>$client->install($module,$p),'invalid_release');
  $oldBase=$app->basePath();$site=$dir.'/fresh-site';mkdir($site);$app->setBasePath($site);$method=new ReflectionMethod($client,'preparePluginDirectory');$method->invoke($client);ok(is_dir($site.'/platform/plugins'));rmdir($site.'/platform/plugins');symlink($dir,$site.'/platform/plugins');rejects(fn()=>$method->invoke($client),'unsafe_plugin_directory');unlink($site.'/platform/plugins');$app->setBasePath($oldBase);
+
+ $verify=new ReflectionMethod($client,'verifyHomepage');$revision=str_repeat('a',64);$query='سحاب دوار الشهيد';$expected=['revision'=>$revision,'layout'=>'modern','map_query'=>$query];
+ $url='https://www.google.com/maps?q='.rawurlencode($query).'&output=embed';
+ $html='<div data-design-home data-design-revision="'.$revision.'" data-layout="modern"><iframe src="'.htmlspecialchars($url,ENT_QUOTES).'"></iframe></div>';
+ $verify->invoke($client,$html,$expected);ok(true);
+ foreach([str_replace($revision,str_repeat('b',64),$html),str_replace('iframe','span',$html),str_replace('google.com','evil.example',$html),str_replace('modern','classic',$html),'<!--'.$html.'-->']as$bad)rejects(fn()=>$verify->invoke($client,$bad,$expected),'site_verification_failed');
+ rejects(fn()=>$verify->invoke($client,$html,['revision'=>'bad','layout'=>'modern']),'invalid_homepage_verification');
+ $verify->invoke($client,'legacy',null);ok(true);
  echo "Passed $n site-client credential, TLS, package hash and path checks.\n";
 }finally{(new Illuminate\Filesystem\Filesystem())->deleteDirectory($dir);}

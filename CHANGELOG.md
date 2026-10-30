@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.6 — 2026-10-30
+
+- Verify the actual rendered homepage revision and requested Google map/layout before reporting a design change as installed. Reject stale pages and missing maps.
+- Request a fresh page after installation while retaining compatibility with historical design artifacts.
+- Add regression checks for stale HTML, missing/foreign map frames, wrong layout and comment-only markers.
+
 ## 1.3.5 — 2026-10-29
 
 - Read Copilot enablement and owner ID from cached configuration; enabling Copilot no longer enables production debugging.

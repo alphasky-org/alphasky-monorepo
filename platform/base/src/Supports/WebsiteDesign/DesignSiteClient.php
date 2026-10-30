@@ -23,10 +23,29 @@ final class DesignSiteClient {
   try{
    $this->install($result['module_name'],$package);
    if(!empty($result['homepage_shortcode']))(new DesignPublisher())->homepage($result['module_name'],$result['homepage_shortcode']);
-   $check=Http::connectTimeout(10)->timeout(30)->withoutRedirecting()->get(rtrim((string)config('app.url'),'/').'/');
+   $url=rtrim((string)config('app.url'),'/').'/';
+   if(isset($result['homepage_verification']['revision']))$url.='?runure_design_revision='.rawurlencode($result['homepage_verification']['revision']);
+   $check=Http::connectTimeout(10)->timeout(30)->withoutRedirecting()->withHeaders(['Cache-Control'=>'no-cache'])->get($url);
    if(!$check->successful()||(!empty($result['homepage_shortcode'])&&!str_contains($check->body(),'data-design-home')))throw new RuntimeException('site_verification_failed');
+   if(!empty($result['homepage_shortcode']))$this->verifyHomepage($check->body(),$result['homepage_verification']??null);
    return $this->request(['action'=>'report','operation_id'=>$operation['id'],'success'=>true]);
   }catch(\Throwable $e){report($e);return $this->request(['action'=>'report','operation_id'=>$operation['id'],'success'=>false]);}
+ }
+ private function verifyHomepage(string $html,?array $expected):void {
+  if($expected===null)return; // Historical artifacts predate rendered acceptance checks.
+  $revision=$expected['revision']??'';
+  if(!is_string($revision)||!preg_match('/^[a-f0-9]{64}$/D',$revision)||!in_array($expected['layout']??null,['classic','modern'],true))throw new RuntimeException('invalid_homepage_verification');
+  $previous=libxml_use_internal_errors(true);
+  try{$doc=new \DOMDocument();$doc->loadHTML('<?xml encoding="UTF-8">'.$html,LIBXML_NONET);$xpath=new \DOMXPath($doc);
+   $nodes=$xpath->query('//*[@data-design-home and @data-design-revision="'.$revision.'"]');
+   if($nodes->length!==1||$nodes->item(0)->getAttribute('data-layout')!==$expected['layout'])throw new RuntimeException('site_verification_failed');
+   if(($expected['map_query']??null)!==null){
+    if(!is_string($expected['map_query'])||trim($expected['map_query'])==='')throw new RuntimeException('invalid_homepage_verification');
+    $url='https://www.google.com/maps?q='.rawurlencode($expected['map_query']).'&output=embed';$found=false;
+    foreach($nodes->item(0)->getElementsByTagName('iframe')as$frame)if($frame->getAttribute('src')===$url)$found=true;
+    if(!$found)throw new RuntimeException('site_verification_failed');
+   }
+  }finally{libxml_clear_errors();libxml_use_internal_errors($previous);}
  }
  private function preparePluginDirectory():void {
   foreach([base_path('platform'),base_path('platform/plugins')]as$directory){if(is_link($directory))throw new RuntimeException('unsafe_plugin_directory');if(!is_dir($directory)&&!mkdir($directory,0755))throw new RuntimeException('plugin_directory_unavailable');}
