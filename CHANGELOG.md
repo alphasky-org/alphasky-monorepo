@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.7 — 2026-10-30
+
+- Clear tenant compiled views and application content caches after publishing a generated module/homepage, before verifying the public result. A failed cache refresh prevents a success report.
+
 ## 1.3.6 — 2026-10-30
 
 - Verify the actual rendered homepage revision and requested Google map/layout before reporting a design change as installed. Reject stale pages and missing maps.

@@ -22,5 +22,11 @@ try{
  foreach([str_replace($revision,str_repeat('b',64),$html),str_replace('iframe','span',$html),str_replace('google.com','evil.example',$html),str_replace('modern','classic',$html),'<!--'.$html.'-->']as$bad)rejects(fn()=>$verify->invoke($client,$bad,$expected),'site_verification_failed');
  rejects(fn()=>$verify->invoke($client,$html,['revision'=>'bad','layout'=>'modern']),'invalid_homepage_verification');
  $verify->invoke($client,'legacy',null);ok(true);
+
+ $base=$app->basePath();$app->setBasePath($site);$record=$site.'/commands.jsonl';
+ file_put_contents($site.'/artisan','<?php file_put_contents('.var_export($record,true).',json_encode($argv).PHP_EOL,FILE_APPEND);');
+ $refresh=new ReflectionMethod($client,'refreshPublishedContent');$refresh->invoke($client);
+ $calls=array_map(fn($line)=>json_decode($line,true)[1],file($record,FILE_IGNORE_NEW_LINES));ok($calls===['view:clear','cache:clear']);
+ file_put_contents($site.'/artisan','<?php exit(1);');rejects(fn()=>$refresh->invoke($client),'site_cache_refresh_failed');$app->setBasePath($base);
  echo "Passed $n site-client credential, TLS, package hash and path checks.\n";
 }finally{(new Illuminate\Filesystem\Filesystem())->deleteDirectory($dir);}

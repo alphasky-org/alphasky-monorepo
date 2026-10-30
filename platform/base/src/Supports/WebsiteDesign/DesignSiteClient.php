@@ -23,6 +23,7 @@ final class DesignSiteClient {
   try{
    $this->install($result['module_name'],$package);
    if(!empty($result['homepage_shortcode']))(new DesignPublisher())->homepage($result['module_name'],$result['homepage_shortcode']);
+   $this->refreshPublishedContent();
    $url=rtrim((string)config('app.url'),'/').'/';
    if(isset($result['homepage_verification']['revision']))$url.='?runure_design_revision='.rawurlencode($result['homepage_verification']['revision']);
    $check=Http::connectTimeout(10)->timeout(30)->withoutRedirecting()->withHeaders(['Cache-Control'=>'no-cache'])->get($url);
@@ -30,6 +31,14 @@ final class DesignSiteClient {
    if(!empty($result['homepage_shortcode']))$this->verifyHomepage($check->body(),$result['homepage_verification']??null);
    return $this->request(['action'=>'report','operation_id'=>$operation['id'],'success'=>true]);
   }catch(\Throwable $e){report($e);return $this->request(['action'=>'report','operation_id'=>$operation['id'],'success'=>false]);}
+ }
+ private function refreshPublishedContent():void {
+  // A successful file install can still serve cached shortcode HTML or compiled views.
+  foreach(['view:clear','cache:clear']as$command){
+   $process=new Process([PHP_BINARY,base_path('artisan'),$command],base_path(),null,null,120);
+   $process->run();
+   if(!$process->isSuccessful())throw new RuntimeException('site_cache_refresh_failed');
+  }
  }
  private function verifyHomepage(string $html,?array $expected):void {
   if($expected===null)return; // Historical artifacts predate rendered acceptance checks.
