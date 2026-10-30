@@ -19,9 +19,13 @@ final class DesignSiteClient {
   if(($operation['status']??'')!=='artifact_ready')return $operation;
   $result=$operation['result'];
   if(isset($result['brand'])){(new DesignPublisher())->brand($request['brand']);return $this->request(['action'=>'report','operation_id'=>$operation['id'],'success'=>true]);}
-  $package=$result['package'];
   try{
-   $this->install($result['module_name'],$package);
+   if(!empty($result['dependency_packages']))(new DesignCatalogInstaller())->install($result['dependency_packages'],function(string $path):string{
+    $response=$this->http()->post(rtrim($this->connection['server'],'/').$path,['domain'=>$this->connection['domain'],'alphasky_key'=>$this->connection['token']]);
+    if(!$response->successful())throw new RuntimeException('catalog_download_failed');return $response->body();
+   });
+   if(isset($result['package']))$this->install($result['module_name'],$result['package']);
+   elseif(empty($result['catalog_only'])||empty($result['dependency_packages']))throw new RuntimeException('invalid_design_artifact');
    if(!empty($result['homepage_shortcode']))(new DesignPublisher())->homepage($result['module_name'],$result['homepage_shortcode']);
    $this->refreshPublishedContent();
    $url=rtrim((string)config('app.url'),'/').'/';

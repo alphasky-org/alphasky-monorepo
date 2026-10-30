@@ -1,3 +1,7 @@
+# 1.4.0
+
+- Install authenticated AlphaSky catalog dependencies before generated modules, including standalone plugin activation. Verify hashes, manifests, core compatibility, dependency order and active state; preserve existing plugins and stop ambiguous partial migrations.
+
 # Changelog
 
 ## 1.3.7 — 2026-10-30
