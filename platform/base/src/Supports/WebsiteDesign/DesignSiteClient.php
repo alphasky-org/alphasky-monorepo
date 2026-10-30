@@ -11,6 +11,7 @@ final class DesignSiteClient {
  }
  private function http(){return Http::connectTimeout(15)->timeout(1200)->withoutRedirecting()->withHeaders(['X-API-KEY'=>$this->connection['gateway'],'X-Design-Admission'=>$this->connection['admission']??'','X-Design-Time'=>$this->connection['admission_time']??''])->acceptJson();}
  public function request(array $data):array {
+  if(($data['action']??'')==='chat')$data['site_context']=(new DesignUiBlocks())->inventory();
   $r=$this->http()->post(rtrim($this->connection['server'],'/').'/api/v1/website-design',array_merge($data,['domain'=>$this->connection['domain'],'alphasky_key'=>$this->connection['token']]));
   if(!$r->successful()||!is_array($r->json('data')))throw new RuntimeException('central_design_unavailable');return $r->json('data');
  }
@@ -25,9 +26,11 @@ final class DesignSiteClient {
     if(!$response->successful())throw new RuntimeException('catalog_download_failed');return $response->body();
    });
    if(isset($result['package']))$this->install($result['module_name'],$result['package']);
-   elseif(empty($result['catalog_only'])||empty($result['dependency_packages']))throw new RuntimeException('invalid_design_artifact');
+   elseif(empty($result['page_blocks'])&&(empty($result['catalog_only'])||empty($result['dependency_packages'])))throw new RuntimeException('invalid_design_artifact');
    if(!empty($result['homepage_shortcode']))(new DesignPublisher())->homepage($result['module_name'],$result['homepage_shortcode']);
+   $publication=!empty($result['page_blocks'])?$this->publishBlocks($operation['id'],$result['page_blocks']):null;
    $this->refreshPublishedContent();
+   if($publication)(new DesignUiBlocks())->verify($publication);
    $url=rtrim((string)config('app.url'),'/').'/';
    if(isset($result['homepage_verification']['revision']))$url.='?runure_design_revision='.rawurlencode($result['homepage_verification']['revision']);
    $check=Http::connectTimeout(10)->timeout(30)->withoutRedirecting()->withHeaders(['Cache-Control'=>'no-cache'])->get($url);
@@ -35,6 +38,14 @@ final class DesignSiteClient {
    if(!empty($result['homepage_shortcode']))$this->verifyHomepage($check->body(),$result['homepage_verification']??null);
    return $this->request(['action'=>'report','operation_id'=>$operation['id'],'success'=>true]);
   }catch(\Throwable $e){report($e);return $this->request(['action'=>'report','operation_id'=>$operation['id'],'success'=>false]);}
+ }
+ private function publishBlocks(string $operation,array $plan):array {
+  // Reboot the tenant after installing a module so newly registered shortcodes are visible.
+  $code='require getcwd()."/vendor/autoload.php";$app=require getcwd()."/bootstrap/app.php";$app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();$input=json_decode(stream_get_contents(STDIN),true,64,JSON_THROW_ON_ERROR);echo json_encode((new Alphasky\\Base\\Supports\\WebsiteDesign\\DesignUiBlocks())->apply($input["operation"],$input["plan"]),JSON_THROW_ON_ERROR);';
+  $process=new Process([PHP_BINARY,'-r',$code],base_path(),null,json_encode(['operation'=>$operation,'plan'=>$plan],JSON_THROW_ON_ERROR),120);
+  $process->run();$result=json_decode($process->getOutput(),true);
+  if(!$process->isSuccessful()||!is_array($result)||empty($result['url']))throw new RuntimeException('ui_publication_failed: '.mb_substr($process->getErrorOutput(),0,1000));
+  return $result;
  }
  private function refreshPublishedContent():void {
   // A successful file install can still serve cached shortcode HTML or compiled views.

@@ -407,6 +407,11 @@ class ShortcodeCompiler
         return $this->registered;
     }
 
+    public function setDesignSchema(string $key, array $schema): void
+    {
+        if ($this->hasShortcode($key)) $this->registered[$key]['design_schema'] = $schema;
+    }
+
     public function setAdminConfig(string $key, string|null|callable|array $html): void
     {
         $this->registered[$key]['admin_config'] = $html;

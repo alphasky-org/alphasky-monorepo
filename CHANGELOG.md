@@ -1,3 +1,9 @@
+## 1.5.0 — 2026-10-30
+
+- Expose site UI Blocks and published page inventory to the central design planner.
+- Append reviewed media/data blocks with content conflict detection, private backups, idempotent retries and public render verification.
+- Add explicit public data block schemas and correctly encode map addresses.
+
 # 1.4.0
 
 - Install authenticated AlphaSky catalog dependencies before generated modules, including standalone plugin activation. Verify hashes, manifests, core compatibility, dependency order and active state; preserve existing plugins and stop ambiguous partial migrations.

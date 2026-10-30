@@ -8,13 +8,19 @@ final class DesignPublisher {
   if(!preg_match('/^design_[a-f0-9]{12}_frontend$/D',$module)||$shortcode!==str_replace('_','-',$module).'-home')throw new RuntimeException('invalid_homepage');
   return DB::transaction(function()use($module,$shortcode){
    $key='website_design_homepage_'.$module;$id=(int)setting($key,0);
-   $page=$id?Page::query()->find($id):null;
+   $page=$id?Page::query()->lockForUpdate()->find($id):null;
    if(!$page){$page=new Page();$page->name='Home';$page->user_id=DB::table('users')->where('super_user',1)->value('id');}
-   $page->content='['.$shortcode.'][/'.$shortcode.']';$page->template='no-sidebar';$page->status='published';$page->save();
+   $current=(string)$page->getRawOriginal('content');
+   $page->content=self::homepageContent($current,$shortcode);$page->template='no-sidebar';$page->status='published';$page->save();
    if(!setting('website_design_previous_homepage'))setting()->set('website_design_previous_homepage',(string)theme_option('homepage_id',''));
    setting()->set($key,(string)$page->id)->save();
    \Alphasky\Theme\Facades\ThemeOption::setOption('homepage_id',(string)$page->id)->saveOptions();return (int)$page->id;
   });
+ }
+ public static function homepageContent(string $current,string $shortcode):string {
+  // Updating the generated module must not discard other UI Blocks or editor content.
+  if(preg_match('/\\['.preg_quote($shortcode,'/').'(?:\\s|\\])/',$current))return $current;
+  return $current.($current!==''?"\n":'').'['.$shortcode.'][/'.$shortcode.']';
  }
  public function brand(array $data):array {
   $changes=[];foreach(['primary','accent']as$key)if(isset($data[$key])){if(!is_string($data[$key])||!preg_match('/^#[a-f0-9]{6}$/iD',$data[$key]))throw new RuntimeException('invalid_color');$changes['website_design_'.$key]=$data[$key];}

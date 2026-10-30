@@ -72,6 +72,12 @@ class Shortcode
         $this->compiler->setAdminConfig($key, $html);
     }
 
+    /** Explicit reviewed schema for AI page composition; callbacks are never exposed. */
+    public function setDesignSchema(string $key, array $schema): void
+    {
+        $this->compiler->setDesignSchema($key, $schema);
+    }
+
     public function modifyAdminConfig(string $key, callable|Closure $callback): void
     {
         $this->compiler->modifyAdminConfig($key, $callback);
