@@ -1,3 +1,7 @@
+## 1.5.1 — 2026-10-30
+
+- Preserve UI publication markers during HTML purification so rendered media blocks can be verified without false failure.
+
 ## 1.5.0 — 2026-10-30
 
 - Expose site UI Blocks and published page inventory to the central design planner.

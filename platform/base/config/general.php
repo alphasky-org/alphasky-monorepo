@@ -318,7 +318,7 @@ return [
     'purifier' => [
         'default' => [
             'HTML.Doctype' => 'HTML 4.01 Transitional',
-            'HTML.Allowed' => 'div,b,strong,i,em,u,a[href|title|rel|style|target|dofollow|nofollow],ul,ol,li,p[style],br,span[style],img[width|height|alt|src|style|loading],button,ins[style|data-ad-client|data-ad-slot|data-ad-format|data-full-width-responsive],video[src|type|width|height|preload|controls|autoplay|autostart|poster|id|class,muted,loop],meta[name|content|property],link[media|type|rel|href]',
+            'HTML.Allowed' => 'div[data-design-ui],b,strong,i,em,u,a[href|title|rel|style|target|dofollow|nofollow],ul,ol,li,p[style],br,span[style],img[width|height|alt|src|style|loading],button,ins[style|data-ad-client|data-ad-slot|data-ad-format|data-full-width-responsive],video[src|type|width|height|preload|controls|autoplay|autostart|poster|id|class,muted,loop],meta[name|content|property],link[media|type|rel|href]',
             'URI.AllowedSchemes' => 'http,https,mailto,tel,viber,ftp,data',
             'HTML.AllowedElements' => [
                 'a',
@@ -432,6 +432,7 @@ return [
             ['audio', 'Block', 'Optional: (source, Flow) | (Flow, source) | Flow', 'Common'],
         ],
         'custom_attributes' => [
+            ['div', 'data-design-ui', 'Text'],
             ['a', 'rel', 'Text'],
             ['a', 'dofollow', 'Bool'],
             ['a', 'nofollow', 'Bool'],
