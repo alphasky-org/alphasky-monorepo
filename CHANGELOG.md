@@ -1,3 +1,8 @@
+# 1.6.1 — 2026-10-31
+
+- Allow editing generated homepages without a separate slug record; optional permalink creation keeps uniqueness checks.
+- Read and preserve the CMS administrative email list format; show current owner/site defaults when settings have not been saved yet.
+
 # 1.6.0 — 2026-10-31
 
 - Publish managed homepages as separate navigation, slider, about, services, contact and footer shortcodes; migrate legacy instances while retaining attributes, sibling blocks and editor ordering.

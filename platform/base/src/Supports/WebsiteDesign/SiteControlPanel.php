@@ -67,7 +67,7 @@ final class SiteControlPanel
             if(in_array($chunk['name'],['google-map','youtube-video'],true)){$fields=[['name'=>'content','type'=>'text','label'=>$chunk['name']==='google-map'?'Address':'YouTube URL']];$values=['content'=>$chunk['body']];}
             $blocks[]=['index'=>$index,'name'=>$chunk['name'],'title'=>$info['name']??$chunk['name'],'fields'=>$fields,'values'=>$values];
         }
-        return ['id'=>$id,'name'=>$snapshot['name'],'slug'=>$snapshot['slug'],'version'=>$this->hash($snapshot),'blocks'=>$blocks,'content'=>$snapshot['content']];
+        return ['id'=>$id,'homepage'=>(int)theme_option('homepage_id')===$id,'name'=>$snapshot['name'],'slug'=>$snapshot['slug'],'version'=>$this->hash($snapshot),'blocks'=>$blocks,'content'=>$snapshot['content']];
     }
 
     public static function decodeRows(string $value): array
@@ -98,9 +98,11 @@ final class SiteControlPanel
 
     private function savePage(array $input): array
     {
-        Validator::make($input,['id'=>'required|integer|min:1','name'=>'required|string|max:250','slug'=>'required|string|max:200|regex:/^[\pL\pN_-]+$/u','version'=>'required|string|size:64','order'=>'present|array|max:200','order.*'=>'integer|min:0','edits'=>'present|array|max:200'])->validate();
+        Validator::make($input,['id'=>'required|integer|min:1','name'=>'required|string|max:250','slug'=>'present|nullable|string|max:200|regex:/^[\pL\pN_-]+$/u','version'=>'required|string|size:64','order'=>'present|array|max:200','order.*'=>'integer|min:0','edits'=>'present|array|max:200'])->validate();
         return DB::transaction(function()use($input){
             $page=Page::query()->lockForUpdate()->find($input['id']);if(!$page)throw new RuntimeException('page_unavailable');
+            $input['slug']=(string)($input['slug']??'');
+            if($input['slug']===''&&(int)theme_option('homepage_id')!==(int)$page->id)throw new RuntimeException('invalid_slug');
             $snapshot=$this->snapshot($page);if(!hash_equals($this->hash($snapshot),$input['version']))throw new RuntimeException('page_changed');
             $chunks=self::chunks($snapshot['content']);$available=[];foreach($chunks as $i=>$chunk)if(isset($chunk['name']))$available[]=$i;
             if(array_diff(array_keys($input['edits']),$available))throw new RuntimeException('invalid_block_fields');
@@ -121,13 +123,13 @@ final class SiteControlPanel
             }
             $content='';$position=0;foreach($chunks as $chunk)$content.=isset($chunk['name'])?$rendered[$order[$position++]]:$chunk['raw'];
             $slug=Slug::query()->where('reference_type',Page::class)->where('reference_id',$page->id)->lockForUpdate()->first();
-            if(!$slug)throw new RuntimeException('slug_unavailable');
-            if(Slug::query()->where('key',$input['slug'])->where('prefix',$slug->prefix)->where('id','!=',$slug->id)->exists())throw new RuntimeException('slug_taken');
+            $prefix=$slug?->prefix??\Alphasky\Slug\Facades\SlugHelper::getPrefix(Page::class);
+            if($input['slug']!==''&&Slug::query()->where('key',$input['slug'])->where('prefix',$prefix)->when($slug,fn($q)=>$q->where('id','!=',$slug->id))->exists())throw new RuntimeException('slug_taken');
             $dir=storage_path('app/private/site-control');if(!is_dir($dir))mkdir($dir,0700,true);
             $backup=$dir.'/'.$page->id.'-'.$this->hash($snapshot).'.json';if(!is_file($backup)){file_put_contents($backup,json_encode($snapshot,JSON_THROW_ON_ERROR),LOCK_EX);chmod($backup,0600);}
             // Raw write preserves visual-builder HTML rather than round-tripping it through a sanitizer.
             DB::table('pages')->where('id',$page->id)->update(['name'=>strip_tags($input['name']),'content'=>$content,'updated_at'=>now()]);
-            $slug->key=$input['slug'];$slug->save();
+            if($input['slug']!==''){$slug??=new Slug(['reference_type'=>Page::class,'reference_id'=>$page->id,'prefix'=>$prefix]);$slug->key=$input['slug'];$slug->save();}
             \Illuminate\Support\Facades\Cache::flush();
             return $this->page((int)$page->id);
         });
@@ -135,7 +137,7 @@ final class SiteControlPanel
 
     private function settings(): array
     {
-        $data=['admin_email'=>(string)setting('admin_email',''),'site_title'=>(string)theme_option('site_title',''),
+        $data=['admin_email'=>(string)(get_admin_email()->first() ?: \Alphasky\ACL\Models\User::query()->where('super_user',1)->orderBy('id')->value('email')),'site_title'=>(string)(theme_option('site_title') ?: config('app.name')),
             'primary'=>(string)setting('website_design_primary',theme_option('primary_color','#2354c9')),
             'accent'=>(string)setting('website_design_accent',theme_option('primary_color_hover','#8051d8')),
             'social_links'=>array_map(fn($link)=>['label'=>(string)$link->getName(),'url'=>(string)$link->getUrl()],\Alphasky\Theme\Supports\ThemeSupport::getSocialLinks())];
@@ -149,7 +151,8 @@ final class SiteControlPanel
             if(!hash_equals($this->settings()['version'],$input['version']))throw new RuntimeException('settings_changed');
             (new DesignPublisher())->brand(['primary'=>$input['primary'],'accent'=>$input['accent']]);
             $social=array_map(fn($s)=>['label'=>strip_tags($s['label']),'url'=>$s['url']],$input['social_links']);
-            setting()->set(['admin_email'=>$input['admin_email']])->save();
+            $emails=get_admin_email()->values()->all();$emails[0]=$input['admin_email'];
+            setting()->set(['admin_email'=>json_encode(array_values(array_unique($emails)),JSON_THROW_ON_ERROR)])->save();
             $old=json_decode((string)theme_option('social_links','[]'),true)?:[];$links=[];
             foreach($social as $link){$extras=[];foreach($old as $row){$values=array_column($row,'value','key');if(($values['name']??'')===$link['label']){$extras=array_diff_key($values,array_flip(['name','url']));break;}}$values=['name'=>$link['label'],'url'=>$link['url']]+$extras;$links[]=array_map(fn($key)=>['key'=>$key,'value'=>$values[$key]],array_keys($values));}
             \Alphasky\Theme\Facades\ThemeOption::setOption('social_links',json_encode($links,JSON_THROW_ON_ERROR))->saveOptions();

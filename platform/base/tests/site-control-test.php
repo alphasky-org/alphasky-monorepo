@@ -1,5 +1,5 @@
 <?php
-namespace Alphasky\Base\Supports\WebsiteDesign { function shortcode(){return $GLOBALS['panel_shortcode'];} }
+namespace Alphasky\Base\Supports\WebsiteDesign { function shortcode(){return $GLOBALS['panel_shortcode'];} function theme_option($key){return $GLOBALS['panel_homepage']??1;} }
 namespace {
 require $argv[1].'/vendor/autoload.php';$app=require $argv[1].'/bootstrap/app.php';$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 require $argv[2].'/platform/base/src/Supports/WebsiteDesign/SiteControlPanel.php';require $argv[2].'/platform/base/src/Supports/WebsiteDesign/DesignPublisher.php';
@@ -28,6 +28,9 @@ try{
  $input['version']=$result['version'];$input['order']=[$indices[0],$indices[0]];rejects(fn()=>$save->invoke($service,$input),'invalid_block_order');
  rejects(fn()=>SiteControlPanel::validateFields($fields,['title'=>'[evil]']),'invalid_block_fields');rejects(fn()=>SiteControlPanel::validateFields($fields,['title'=>'<script>']),'invalid_block_fields');rejects(fn()=>SiteControlPanel::validateFields($fields,['secret'=>'x']),'invalid_block_fields');
  ok(count(glob($dir.'/app/private/site-control/*.json'))===1);ok(DB::table('pages')->value('content')===$raw);
+ DB::table('pages')->insert(['id'=>2,'name'=>'New homepage','content'=>'[test-about][/test-about]','status'=>'published']);$GLOBALS['panel_homepage']=2;
+ $blank=$read->invoke($service,2);ok($blank['homepage']);ok($blank['slug']==='');
+ $saved=$save->invoke($service,['id'=>2,'name'=>$blank['name'],'slug'=>'','version'=>$blank['version'],'order'=>[0],'edits'=>[0=>['title'=>'New homepage title']]]);ok($saved['blocks'][0]['values']['title']==='New homepage title');
  echo "Passed $n split migration, data editing, ordering, preservation, stale-save, validation and backup checks.\n";
 }finally{(new Illuminate\Filesystem\Filesystem())->deleteDirectory($dir);}
 }
