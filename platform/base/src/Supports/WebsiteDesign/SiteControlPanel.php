@@ -29,9 +29,8 @@ final class SiteControlPanel
     private function dashboard(): array
     {
         $members = function_exists('is_plugin_active') && is_plugin_active('member');
-        return ['pages' => Page::query()->count(), 'published_pages' => Page::query()->where('status','published')->count(),
-            'members_enabled' => $members, 'members' => $members ? \Alphasky\Member\Models\Member::query()->count() : null,
-            'ui_blocks' => count(shortcode()->getAll()), 'site_name' => theme_option('site_title', config('app.name')),
+        return ['widgets' => (new SiteDashboard())->widgets(),
+            'members_enabled' => $members, 'site_name' => theme_option('site_title', config('app.name')),
             'url' => config('app.url')];
     }
 

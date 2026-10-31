@@ -1,3 +1,8 @@
+# 1.7.0 — 2026-10-31
+
+- Read app dashboard statistics from the CMS dashboard event and plugin widget registry, including live values, permission checks, visibility and ordering.
+- Publish structured widget metadata from DashboardWidgetInstance; the app no longer maintains a fixed list of counters.
+
 # 1.6.1 — 2026-10-31
 
 - Allow editing generated homepages without a separate slug record; optional permalink creation keeps uniqueness checks.

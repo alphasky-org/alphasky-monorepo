@@ -235,6 +235,7 @@ class DashboardWidgetInstance
             $data = [
                 'id' => $widget->id,
                 'type' => $this->type,
+                'mobile' => $this->mobileDescriptor($widgetSetting),
                 'view' => view(
                     'core/dashboard::widgets.base',
                     compact('widget', 'widgetSetting', 'settings', 'predefinedRanges')
@@ -256,10 +257,26 @@ class DashboardWidgetInstance
             'id' => $widget->id,
             'type' => $this->type,
             'priority' => $this->priority,
+            'mobile' => $this->mobileDescriptor($widgetSetting, $widget->statsTotal),
             'view' => view('core/dashboard::widgets.stats', compact('widget', 'widgetSetting'))->render(),
         ];
 
         return $widgets;
+    }
+
+    /** Structured representation of the same authorized widget used by the CMS dashboard. */
+    protected function mobileDescriptor(?DashboardWidgetSetting $setting, int|string|null $value = null): array
+    {
+        return [
+            'key' => $this->key,
+            'kind' => $this->type === 'widget' ? 'widget' : 'stat',
+            'title' => $this->title,
+            'value' => $value,
+            'icon' => $this->icon,
+            'url' => $this->route,
+            'visible' => ! $setting || (int) $setting->status === 1,
+            'order' => $this->type === 'widget' ? ($setting->order ?? 999) : $this->priority,
+        ];
     }
 
     public function getPredefinedRanges(): array
