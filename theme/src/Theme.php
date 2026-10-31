@@ -793,6 +793,11 @@ class Theme implements ThemeContract
 
         $path = $this->getThemeNamespace($layoutDir . '.' . $this->layout);
 
+        // Explicitly selected by the managed website publisher; ordinary theme pages retain their layout.
+        if ($this->layout === 'website-design' && ! $this->view->exists($path)) {
+            $path = 'packages/theme::layouts.website-design';
+        }
+
         if (! $this->view->exists($path)) {
             $this->handleViewNotFound($path);
         }

@@ -4,20 +4,31 @@ use Alphasky\Page\Models\Page;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 final class DesignPublisher {
- public function homepage(string $module,string $shortcode):int {
+ public function homepage(string $module,string $shortcode,array $sections=[]):int {
   if(!preg_match('/^design_[a-f0-9]{12}_frontend$/D',$module)||$shortcode!==str_replace('_','-',$module).'-home')throw new RuntimeException('invalid_homepage');
-  return DB::transaction(function()use($module,$shortcode){
+  return DB::transaction(function()use($module,$shortcode,$sections){
    $key='website_design_homepage_'.$module;$id=(int)setting($key,0);
    $page=$id?Page::query()->lockForUpdate()->find($id):null;
    if(!$page){$page=new Page();$page->name='Home';$page->user_id=DB::table('users')->where('super_user',1)->value('id');}
    $current=(string)$page->getRawOriginal('content');
-   $page->content=self::homepageContent($current,$shortcode);$page->template='no-sidebar';$page->status='published';$page->save();
+   $next=self::homepageContent($current,$shortcode,$sections);
+   if($current!==''&&$next!==$current){$dir=storage_path('app/private/website-design/page-backups');if(!is_dir($dir))mkdir($dir,0700,true);$file=$dir.'/split-'.$page->id.'-'.hash('sha256',$current).'.json';if(!is_file($file)){file_put_contents($file,json_encode(['page_id'=>$page->id,'content'=>$current],JSON_THROW_ON_ERROR),LOCK_EX);chmod($file,0600);}}
+   $page->content=self::homepageContent($current,$shortcode,$sections);$page->template=$sections?'website-design':'no-sidebar';$page->status='published';$page->save();
    if(!setting('website_design_previous_homepage'))setting()->set('website_design_previous_homepage',(string)theme_option('homepage_id',''));
    setting()->set($key,(string)$page->id)->save();
    \Alphasky\Theme\Facades\ThemeOption::setOption('homepage_id',(string)$page->id)->saveOptions();return (int)$page->id;
   });
  }
- public static function homepageContent(string $current,string $shortcode):string {
+ public static function homepageContent(string $current,string $shortcode,array $sections=[]):string {
+  if($sections){
+   $prefix=substr($shortcode,0,-4);
+   foreach($sections as $section)if(!in_array($section,array_map(fn($s)=>$prefix.$s,['navigation','slider','about','services','contact','footer']),true))throw new RuntimeException('invalid_homepage_section');
+   $pattern='/\\['.preg_quote($shortcode,'/').'(\\s[^\\]]*)?\\](.*?)\\[\\/'.preg_quote($shortcode,'/').'\\]/s';
+   if(preg_match($pattern,$current))return preg_replace_callback($pattern,fn($m)=>implode("\n",array_map(fn($name)=>'['.$name.($m[1]??'').'][/'.$name.']',$sections)),$current,1);
+   // Any existing section means an editor controls ordering/removal; never restore deleted blocks.
+   foreach($sections as $section)if(str_contains($current,'['.$section))return $current;
+   return $current.($current!==''?"\n":'').implode("\n",array_map(fn($name)=>'['.$name.'][/'.$name.']',$sections));
+  }
   // Updating the generated module must not discard other UI Blocks or editor content.
   if(preg_match('/\\['.preg_quote($shortcode,'/').'(?:\\s|\\])/',$current))return $current;
   return $current.($current!==''?"\n":'').'['.$shortcode.'][/'.$shortcode.']';

@@ -27,7 +27,7 @@ final class DesignSiteClient {
    });
    if(isset($result['package']))$this->install($result['module_name'],$result['package']);
    elseif(empty($result['page_blocks'])&&(empty($result['catalog_only'])||empty($result['dependency_packages'])))throw new RuntimeException('invalid_design_artifact');
-   if(!empty($result['homepage_shortcode']))(new DesignPublisher())->homepage($result['module_name'],$result['homepage_shortcode']);
+   if(!empty($result['homepage_shortcode']))(new DesignPublisher())->homepage($result['module_name'],$result['homepage_shortcode'],$result['homepage_sections']??[]);
    $publication=!empty($result['page_blocks'])?$this->publishBlocks($operation['id'],$result['page_blocks']):null;
    $this->refreshPublishedContent();
    if($publication)(new DesignUiBlocks())->verify($publication);
@@ -62,11 +62,12 @@ final class DesignSiteClient {
   $previous=libxml_use_internal_errors(true);
   try{$doc=new \DOMDocument();$doc->loadHTML('<?xml encoding="UTF-8">'.$html,LIBXML_NONET);$xpath=new \DOMXPath($doc);
    $nodes=$xpath->query('//*[@data-design-home and @data-design-revision="'.$revision.'"]');
-   if($nodes->length!==1||$nodes->item(0)->getAttribute('data-layout')!==$expected['layout'])throw new RuntimeException('site_verification_failed');
+   if(empty($expected['sections'])){if($nodes->length!==1||$nodes->item(0)->getAttribute('data-layout')!==$expected['layout'])throw new RuntimeException('site_verification_failed');}
+   else{$seen=[];if($nodes->length<1||$nodes->length>count($expected['sections']))throw new RuntimeException('site_verification_failed');foreach($nodes as $node){$section=$node->getAttribute('data-design-section');if(!in_array($section,$expected['sections'],true)||in_array($section,$seen,true)||$node->getAttribute('data-layout')!==$expected['layout'])throw new RuntimeException('site_verification_failed');$seen[]=$section;}}
    if(($expected['map_query']??null)!==null){
     if(!is_string($expected['map_query'])||trim($expected['map_query'])==='')throw new RuntimeException('invalid_homepage_verification');
     $url='https://www.google.com/maps?q='.rawurlencode($expected['map_query']).'&output=embed';$found=false;
-    foreach($nodes->item(0)->getElementsByTagName('iframe')as$frame)if($frame->getAttribute('src')===$url)$found=true;
+    foreach($nodes as $node)foreach($node->getElementsByTagName('iframe')as$frame)if($frame->getAttribute('src')===$url)$found=true;
     if(!$found)throw new RuntimeException('site_verification_failed');
    }
   }finally{libxml_clear_errors();libxml_use_internal_errors($previous);}

@@ -1,3 +1,11 @@
+# 1.6.0 — 2026-10-31
+
+- Publish managed homepages as separate navigation, slider, about, services, contact and footer shortcodes; migrate legacy instances while retaining attributes, sibling blocks and editor ordering.
+- Add an explicit website-design layout that avoids duplicate theme navigation while preserving theme assets and hooks.
+- Expose JSON-driven module catalogs and validated CRUD through installed tenant controllers, with stale-record checks, explicit delete confirmation and retry receipts.
+- Add a tenant-only control panel service for page fields, shortcode ordering/content, general/theme settings and member listing. Uses optimistic versions, private page backups, validated structured fields and the real theme options. No public endpoint or credentials are added to the package.
+- Verify rendered section revisions and expose editable generated content schemas to the hosting application.
+
 ## 1.5.1 — 2026-10-30
 
 - Preserve UI publication markers during HTML purification so rendered media blocks can be verified without false failure.
