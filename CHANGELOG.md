@@ -1,3 +1,9 @@
+# 1.8.0 — Managed website email
+
+- Opt-in managed SMTP discovery verifies an active, same-domain mailbox before sending.
+- Fail clearly when no mailbox exists; keep credentials out of template JSON and stored settings.
+- Enforce STARTTLS and certificate verification for managed SMTP.
+
 # 1.7.0 — 2026-10-31
 
 - Read app dashboard statistics from the CMS dashboard event and plugin widget registry, including live values, permission checks, visibility and ordering.

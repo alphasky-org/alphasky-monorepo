@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'managed_mail_url' => env('RUNURE_MANAGED_MAIL_URL', ''),
     // Server-side site token; never sent to browser storage.
     'copilot' => [
         'enabled' => env('enable_ai_copilot', false),

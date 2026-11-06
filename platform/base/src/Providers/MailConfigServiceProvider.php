@@ -35,6 +35,12 @@ class MailConfigServiceProvider extends ServiceProvider
                     return;
                 }
 
+                if ($config->get('core.base.general.managed_mail_url')) {
+                    \Alphasky\Base\Supports\ManagedMail::configure();
+                    $configured = true;
+                    return;
+                }
+
                 $configured = true;
 
                 $setting = $this->app->make(SettingStore::class);
