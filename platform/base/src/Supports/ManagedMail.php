@@ -32,16 +32,29 @@ final class ManagedMail
             || empty($data['password']) || empty($data['host']) || ($data['port'] ?? 0) !== 587) {
             throw \Illuminate\Validation\ValidationException::withMessages(['sender' => self::unavailable()]);
         }
+        $senderName = self::senderName(setting('email_from_name'),
+            function_exists('theme_option') ? theme_option('site_title') : setting('site_title'),
+            config('app.name'), $domain);
+        config(['mail.from.name' => $senderName]);
         config(['mail.default' => 'smtp', 'mail.from.address' => $data['from'],
             'mail.mailers.smtp' => ['transport' => 'smtp', 'scheme' => 'smtp', 'host' => $data['host'],
                 'port' => 587, 'username' => $data['username'], 'password' => $data['password'],
                 'require_tls' => true, 'verify_peer' => true, 'timeout' => 20]]);
         // Only non-secret sender metadata is saved for the administrator's Email settings.
-        if (setting('email_from_address') !== $data['from']) {
-            setting()->set(['email_from_address' => $data['from'], 'email_driver' => 'smtp',
+        if (setting('email_from_address') !== $data['from'] || setting('email_from_name') !== $senderName) {
+            setting()->set(['email_from_name' => $senderName, 'email_from_address' => $data['from'], 'email_driver' => 'smtp',
                 'email_host' => $data['host'], 'email_port' => 587,
                 'email_encryption' => 'tls', 'email_username' => $data['username']])->save();
         }
+    }
+
+    public static function senderName(?string $custom, ?string $site, ?string $app, string $domain): string
+    {
+        foreach ([$custom, $site, $app, $domain] as $candidate) {
+            $name = trim(preg_replace('/[\r\n]+/', ' ', strip_tags((string) $candidate)));
+            if ($name !== '' && !in_array(strtolower($name), ['example', 'laravel'], true)) return $name;
+        }
+        return $domain;
     }
 
     private static function unavailable(): string

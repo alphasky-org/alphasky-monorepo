@@ -1,3 +1,8 @@
+# 1.8.2 — Website email sender name
+
+- Preserve a custom sender name; replace missing/placeholder names with the website title, application name, or domain for managed email.
+- Save the resolved display name to editable email settings.
+
 # 1.8.1 — Lazy managed SMTP resolution
 
 - Resolve mailbox configuration only when constructing an outbound transport, so missing mailboxes never block site boot or configuration caching.
