@@ -1,3 +1,7 @@
+# 1.8.1 — Lazy managed SMTP resolution
+
+- Resolve mailbox configuration only when constructing an outbound transport, so missing mailboxes never block site boot or configuration caching.
+
 # 1.8.0 — Managed website email
 
 - Opt-in managed SMTP discovery verifies an active, same-domain mailbox before sending.

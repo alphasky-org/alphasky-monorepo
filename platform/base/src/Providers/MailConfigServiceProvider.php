@@ -36,7 +36,8 @@ class MailConfigServiceProvider extends ServiceProvider
                 }
 
                 if ($config->get('core.base.general.managed_mail_url')) {
-                    \Alphasky\Base\Supports\ManagedMail::configure();
+                    $config->set('mail.default', 'managed');
+                    $config->set('mail.mailers.managed', ['transport' => 'managed']);
                     $configured = true;
                     return;
                 }
@@ -155,6 +156,11 @@ class MailConfigServiceProvider extends ServiceProvider
 
                         break;
                 }
+            });
+
+            Mail::extend('managed', function () {
+                \Alphasky\Base\Supports\ManagedMail::configure();
+                return $this->app->make(MailManager::class)->createSymfonyTransport(config('mail.mailers.smtp'));
             });
 
             Mail::extend('sendgrid', function (array $config = []) {
