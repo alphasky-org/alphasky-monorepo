@@ -20,6 +20,7 @@ final class SiteControlPanel
             'page' => $this->page((int) ($input['id'] ?? 0)),
             'save_page' => $this->savePage($input),
             'settings' => $this->settings(),
+            'settings_catalog' => (new DesignSettings())->inventory(),
             'save_settings' => $this->saveSettings($input),
             'members' => $this->members($input),
             default => throw new RuntimeException('unsupported_action'),

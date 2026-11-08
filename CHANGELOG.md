@@ -1,3 +1,10 @@
+# 1.9.0 — JSON website settings and backup execution
+
+- Publish a tenant-owned settings catalog with native validation rules and a reviewed extension registry.
+- Apply central JSON settings artifacts after dependency installation, with stale-value checks, confirmation for general/email changes and idempotent receipts.
+- Create and verify database/media backups through the existing backup plugin; installation alone is never reported as backup completion.
+- Exclude credentials and executable custom code from model-visible settings.
+
 # 1.8.2 — Website email sender name
 
 - Preserve a custom sender name; replace missing/placeholder names with the website title, application name, or domain for managed email.
