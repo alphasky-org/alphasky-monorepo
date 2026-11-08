@@ -1,3 +1,10 @@
+## 1.10.0 — 2026-11-08
+
+- Extend authenticated JSON settings actions with email rules/branding, registered template subjects/status, optimization, sitemap, tracking identifiers, API switches, permalink prefixes and official member/blog/language plugin settings.
+- Require owner confirmation for access, tracking, URL and email-policy changes; install reviewed plugin dependencies before applying their settings.
+- Preserve native sitemap/language/permalink cache and update events; validate partial updates against existing related values and reject malformed nested content and tracking identifiers.
+- Publish protected-settings guidance without exposing credential values or accepting arbitrary setting keys.
+
 # 1.9.0 — JSON website settings and backup execution
 
 - Publish a tenant-owned settings catalog with native validation rules and a reviewed extension registry.

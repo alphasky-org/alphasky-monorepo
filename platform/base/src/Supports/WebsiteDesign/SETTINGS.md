@@ -27,3 +27,12 @@ Built-in groups: general, admin-appearance, cache, datatables, phone-number, med
 Additional reviewed plugins register groups through `website_design_settings_registry` with a FormRequest class and explicit field allowlist. Settings absent from this registry—including storage credentials, SMTP secrets, executable custom CSS/JS, template code, destructive maintenance and plugin-specific settings without adapters—must go to capability review. Do not claim every CMS setting is currently executable. Never pass arbitrary setting keys, controllers, shell commands or PHP supplied by the model.
 
 Release 1.9.0. Source deployment must advance Git to the release rather than copying files over an older checkout.
+
+
+## Additional groups (1.10.0)
+
+`email-rules`, `email-branding`, `email-templates`, `optimization`, `sitemap`, `tracking`, `api`, `permalinks`, `member`, `blog`, `language` augment the original seven groups. Optional package groups appear only when their package exists. Plugin settings are reviewed schemas advertised before installation; the central planner derives official dependency packages and the tenant refuses execution until they are active. `member` requires confirmation; `blog` and language presentation are ordinary changes. This does not create new language records or translate content.
+
+Registered email template subjects/status are discovered from EmailHandler. Subjects accept plain text only. Email-rule lists use the same JSON string format as the admin tag inputs: `[{"value":"example.com"}]`. Tracking permits GA4 (`G-...`) and GTM (`GTM-...`) identifiers only and always requires confirmation. Permalink prefixes derive from registered SlugHelper models; updates propagate to slug rows and dispatch the standard event.
+
+No secrets are included in the inventory. `protected_settings` reports manual/private configuration routes and reasons: email/storage/API credentials, environment security and cron, executable custom code/template source, IndexNow actions, destructive restore/delete. Never tell a user these have been executed by a settings patch.

@@ -11,7 +11,7 @@ final class DesignSettings
     {
         $groups = [
             'general' => ['request'=>'GeneralSettingRequest','fields'=>['admin_email','time_zone','enable_send_error_reporting_via_email']],
-            'admin-appearance' => ['request'=>'AdminAppearanceRequest','fields'=>['admin_logo','admin_logo_max_height','admin_favicon','admin_favicon_type','admin_title','admin_appearance_locale','admin_appearance_locale_direction','rich_editor','enable_page_visual_builder','admin_appearance_layout','admin_appearance_show_menu_item_icon','admin_appearance_show_get_started','admin_appearance_container_width','admin_primary_font','admin_primary_color','admin_secondary_color','admin_heading_color','admin_text_color','admin_link_color','admin_link_hover_color']],
+            'admin-appearance' => ['request'=>'AdminAppearanceRequest','fields'=>['login_screen_backgrounds','admin_logo','admin_logo_max_height','admin_favicon','admin_favicon_type','admin_title','admin_appearance_locale','admin_appearance_locale_direction','rich_editor','enable_page_visual_builder','admin_appearance_layout','admin_appearance_show_menu_item_icon','admin_appearance_show_get_started','admin_appearance_container_width','admin_primary_font','admin_primary_color','admin_secondary_color','admin_heading_color','admin_text_color','admin_link_color','admin_link_hover_color']],
             'cache' => ['request'=>'CacheSettingRequest','fields'=>['cache_admin_menu_enable','enable_cache_site_map','cache_front_menu_enabled','cache_user_avatar_enabled','shortcode_cache_enabled','widget_cache_enabled','plugin_cache_enabled','cache_time_site_map','shortcode_cache_ttl','widget_cache_ttl']],
             'datatables' => ['request'=>'DataTableSettingRequest','fields'=>['datatables_default_show_column_visibility','datatables_default_show_export_button','datatables_default_enable_responsive','datatables_pagination_type']],
             'phone-number' => ['request'=>'PhoneNumberSettingRequest','fields'=>['phone_number_enable_country_code','phone_number_available_countries','phone_number_min_length','phone_number_max_length']],
@@ -19,11 +19,12 @@ final class DesignSettings
             'email' => ['request'=>'EmailSettingRequest','fields'=>['email_from_name','email_from_address','email_default_locale']],
         ];
         // Reviewed plugins may register additional settings; never accept registry definitions from AI JSON.
-        return apply_filters('website_design_settings_registry', $groups);
+        return apply_filters('website_design_settings_registry', $groups + DesignSettingsExtensions::groups());
     }
 
     private function rules(array $group, array $values = []): array
     {
+        if(isset($group['rules']))return $group['rules'];
         $class = $group['request'];
         if (!str_contains($class, '\\')) $class = 'Alphasky\\Setting\\Http\\Requests\\'.$class;
         $request = new $class(); $request->replace($values);
@@ -50,10 +51,10 @@ final class DesignSettings
                 $constraints = array_values(array_filter(array_map(fn($r)=>is_string($r)?$r:(method_exists($r,'__toString')?(string)$r:null),$fieldRules)));
                 $fields[$key] = ['value'=>$this->current($key,$fieldRules),'rules'=>$constraints];
             }
-            $out[$id] = ['fields'=>$fields,'requires_confirmation'=>in_array($id,['general','email'],true)];
+            $out[$id] = ['fields'=>$fields,'requires_confirmation'=>($group['confirmation']??in_array($id,['general','email'],true)),'dependencies'=>$group['dependencies']??[]];
         }
         return ['version'=>1,'groups'=>$out,'actions'=>['backup.create'=>['requires'=>['backup'],'scope'=>'Database and uploaded media, not server configuration or source code.']],
-            'installed_plugins'=>array_values(get_active_plugins()),
+            'installed_plugins'=>array_values(get_active_plugins()),'protected_settings'=>DesignSettingsExtensions::protectedSettings(),
             'unavailable'=>'Credentials, executable custom code, destructive maintenance and unregistered settings require a reviewed adapter; never guess or bypass them.'];
     }
 
@@ -94,8 +95,10 @@ final class DesignSettings
         $group=$this->registry()[$plan['group']]??null;
         if(array_diff(array_keys($plan['values']),array_keys($this->inventory()['groups'][$plan['group']]['fields']??[])))throw new RuntimeException('unsupported_settings_fields');
         if(!$group || array_diff(array_keys($plan['values']),$group['fields']))throw new RuntimeException('unsupported_settings_fields');
-        if(in_array($plan['group'],['general','email'],true)&&($plan['confirmed']??false)!==true)throw new RuntimeException('settings_confirmation_required');
-        $rules=$this->rules($group,$plan['values']);$selected=[];$data=[];
+        if(($group['confirmation']??in_array($plan['group'],['general','email'],true))&&($plan['confirmed']??false)!==true)throw new RuntimeException('settings_confirmation_required');
+        foreach($group['dependencies']??[] as$plugin)if(!is_plugin_active($plugin))throw new RuntimeException('settings_dependency_missing');
+        $baseRules=$this->rules($group);$current=[];foreach($group['fields']as$key)if(isset($baseRules[$key]))$current[$key]=$this->current($key,(array)$baseRules[$key]);
+        $rules=$this->rules($group,array_replace($current,$plan['values']));$selected=[];$data=[];
         foreach($group['fields']as$key)if(isset($rules[$key]))$data[$key]=$this->current($key,(array)$rules[$key]);
         foreach($plan['values'] as $key=>$value) {
             if(!array_key_exists($key,$plan['expected'])||$data[$key]!==$plan['expected'][$key])throw new RuntimeException('settings_changed');
@@ -103,7 +106,8 @@ final class DesignSettings
             foreach($rules as $name=>$rule)if(str_starts_with($name,$key.'.'))$selected[$name]=$rule;
         }
         Validator::make(array_replace($data,$plan['values']),$selected)->validate();
-        foreach($plan['values']as$key=>$value)if(is_string($value)&&preg_match('/[\x00<>]/u',$value))throw new RuntimeException('invalid_settings_text');
+        DesignSettingsExtensions::validate($plan['group'],$plan['values'],$data);
+        array_walk_recursive($plan['values'],static function($value){if(is_string($value)&&preg_match('/[\x00<>]/u',$value))throw new RuntimeException('invalid_settings_text');});
         if(isset($plan['values']['admin_appearance_locale'])){
             $locale=$plan['values']['admin_appearance_locale'];
             if(!preg_match('/^[a-z]{2}(?:[_-][A-Za-z]{2,4})?$/D',$locale))throw new RuntimeException('invalid_admin_locale');
@@ -122,6 +126,7 @@ final class DesignSettings
         do_action('core_before_update_settings',$values,'');
         foreach($values as$key=>$value)setting()->set($key,is_array($value)?json_encode($value,JSON_THROW_ON_ERROR):(string)$value,true);
         setting()->save();
+        DesignSettingsExtensions::after($plan['group'],$values);
         \Alphasky\Base\Facades\DashboardMenu::clearCaches();
         do_action('core_after_update_settings',$values,'');
         cache()->forget('core.base.boot_settings');
