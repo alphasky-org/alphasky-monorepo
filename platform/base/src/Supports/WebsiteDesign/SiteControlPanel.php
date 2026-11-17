@@ -14,7 +14,7 @@ final class SiteControlPanel
     {
         (new DesignUiBlocks())->inventory(); // Initialize the same theme registry used by the real page editor.
         return match ($input['action'] ?? '') {
-            'modules', 'module_rows', 'module_create', 'module_update', 'module_delete' => (new SiteModules())->execute($input),
+            'modules', 'module_form', 'module_rows', 'module_create', 'module_update', 'module_delete' => (new SiteModules())->execute($input),
             'dashboard' => $this->dashboard(),
             'pages' => ['pages' => Page::query()->orderBy('id')->get(['id','name','status','updated_at'])->toArray()],
             'page' => $this->page((int) ($input['id'] ?? 0)),

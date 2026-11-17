@@ -1,3 +1,12 @@
+## 1.11.0 — 2026-11-17
+
+- Recover legacy v1 fields from installed native forms without rewriting customer JSON.
+- Accept version 2 mobile module schemas alongside version 1; render metadata from installed generated forms for runtime and dependent choices.
+- Validate nested choices, repeaters, matrix data, coordinates and write-only passwords before invoking native controllers/FormRequests.
+- Round-trip repeaters using the native key/value representation; retain stale-write and idempotency checks.
+- Support bounded, MIME-checked module uploads inside the tenant account, random filenames, temporary-file cleanup and failed-write media cleanup.
+- Add controller/SQLite round-trip, value validation and upload security smoke tests.
+
 ## 1.10.0 — 2026-11-08
 
 - Extend authenticated JSON settings actions with email rules/branding, registered template subjects/status, optimization, sitemap, tracking identifiers, API switches, permalink prefixes and official member/blog/language plugin settings.
