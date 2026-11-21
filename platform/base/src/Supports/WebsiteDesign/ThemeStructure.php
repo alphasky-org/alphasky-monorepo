@@ -28,6 +28,17 @@ final class ThemeStructure
             $views[$path] = array_slice(array_keys($selectors), 0, 70);
             if (count($views) >= 120) break;
         }
-        return ['theme'=>$name,'views'=>$views];
+        $content = [];
+        if (class_exists(\Alphasky\Page\Models\Page::class) && \Illuminate\Support\Facades\Schema::hasTable('pages')) {
+            foreach (\Alphasky\Page\Models\Page::query()->wherePublished()->limit(20)->pluck('content') as $html) {
+                preg_match_all('~<(section|article|p|h[1-6]|details|summary|img|div|ul|li)\b([^<>]*)>~i', substr((string)$html, 0, 65536), $tags, PREG_SET_ORDER);
+                foreach ($tags as $tag) {
+                    $selector = strtolower($tag[1]);
+                    if (preg_match('/\bdata-source-page\s*=/i', $tag[2])) $selector .= '[data-source-page]';
+                    $content[$selector] = true;
+                }
+            }
+        }
+        return ['theme'=>$name,'views'=>$views,'content_selectors'=>array_keys($content)];
     }
 }

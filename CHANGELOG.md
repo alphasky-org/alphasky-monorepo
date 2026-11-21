@@ -1,3 +1,7 @@
+## 1.14.2
+
+- Identify structural elements in published pages so redesigns can target actual page content.
+
 ## 1.14.1
 
 - Apply generated presentation-only releases directly from the standalone CMS chat.
