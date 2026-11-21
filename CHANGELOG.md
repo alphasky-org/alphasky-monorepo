@@ -1,5 +1,9 @@
 ## 1.11.0 — 2026-11-17
 
+## 1.12.0
+
+- Include the website default and enabled content languages in design chat requests.
+
 - Recover legacy v1 fields from installed native forms without rewriting customer JSON.
 - Accept version 2 mobile module schemas alongside version 1; render metadata from installed generated forms for runtime and dependent choices.
 - Validate nested choices, repeaters, matrix data, coordinates and write-only passwords before invoking native controllers/FormRequests.

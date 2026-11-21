@@ -11,7 +11,7 @@ final class DesignSiteClient {
  }
  private function http(){return Http::connectTimeout(15)->timeout(1200)->withoutRedirecting()->withHeaders(['X-API-KEY'=>$this->connection['gateway'],'X-Design-Admission'=>$this->connection['admission']??'','X-Design-Time'=>$this->connection['admission_time']??''])->acceptJson();}
  public function request(array $data):array {
-  if(($data['action']??'')==='chat'){$data['site_context']=(new DesignUiBlocks())->inventory();$data['site_context']['settings']=(new DesignSettings())->inventory();}
+  if(($data['action']??'')==='chat'){$data['site_context']=(new DesignUiBlocks())->inventory();$data['site_context']['settings']=(new DesignSettings())->inventory();$data['site_context']['settings']['site_languages']=SiteLanguages::inventory();}
   $r=$this->http()->post(rtrim($this->connection['server'],'/').'/api/v1/website-design',array_merge($data,['domain'=>$this->connection['domain'],'alphasky_key'=>$this->connection['token']]));
   if(!$r->successful()||!is_array($r->json('data')))throw new RuntimeException('central_design_unavailable');return $r->json('data');
  }
