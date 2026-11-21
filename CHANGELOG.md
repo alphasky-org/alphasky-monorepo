@@ -1,3 +1,7 @@
+## 1.14.1
+
+- Apply generated presentation-only releases directly from the standalone CMS chat.
+
 ## 1.14.0
 
 - Supply public Blade selector inventories to AlphaSky Copilot for original site redesigns.

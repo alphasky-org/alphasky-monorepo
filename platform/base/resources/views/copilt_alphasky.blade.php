@@ -591,6 +591,19 @@
             }
         }
 
+        async function applyInstalledPackage(moduleName) {
+            const applyResponse = await postJson('{{ route('system.alphasky-apply-plugin') }}', {
+                module_name: moduleName,
+            });
+            const applyResult = await applyResponse.json().catch(() => ({}));
+
+            if (!applyResponse.ok || applyResult.error) {
+                throw new Error(applyResult.message || i18n.pluginCommandsFailed);
+            }
+
+            addMessage(applyResult.message || i18n.pluginCommandsSuccess, 'bot');
+        }
+
         async function handlePluginPackage(data) {
             const beforeInstallCommands = Array.isArray(data.before_install_commands) ? data.before_install_commands : [];
 
@@ -615,6 +628,10 @@
             }
 
             addMessage(installResult.message || i18n.pluginInstalled, 'bot');
+            if (data.presentation_only === true && /^site_design_[a-f0-9]{20}$/.test(data.module_name) && installResult.module_name === data.module_name) {
+                await applyInstalledPackage(installResult.module_name);
+                return;
+            }
             renderLocalPluginActionQuestion(installResult);
         }
 
@@ -721,16 +738,7 @@
                 addMessage(i18n.executingPluginCommands, 'bot');
 
                 try {
-                    const applyResponse = await postJson('{{ route('system.alphasky-apply-plugin') }}', {
-                        module_name: pluginData.module_name,
-                    });
-                    const applyResult = await applyResponse.json().catch(() => ({}));
-
-                    if (!applyResponse.ok || applyResult.error) {
-                        throw new Error(applyResult.message || i18n.pluginCommandsFailed);
-                    }
-
-                    addMessage(applyResult.message || i18n.pluginCommandsSuccess, 'bot');
+                    await applyInstalledPackage(pluginData.module_name);
                     setTimeout(() => {
                         window.location.reload();
                     }, 1200);
