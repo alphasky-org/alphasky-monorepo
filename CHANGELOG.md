@@ -1,5 +1,9 @@
 ## 1.11.0 — 2026-11-17
 
+## 1.12.1
+
+- Share registered admin edit routes with the site assistant for navigation help.
+
 ## 1.12.0
 
 - Include the website default and enabled content languages in design chat requests.
