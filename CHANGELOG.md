@@ -1,3 +1,7 @@
+## 1.14.0
+
+- Supply public Blade selector inventories to AlphaSky Copilot for original site redesigns.
+
 ## 1.11.0 — 2026-11-17
 
 ## 1.13.0

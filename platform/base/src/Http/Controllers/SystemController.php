@@ -179,6 +179,7 @@ class SystemController extends BaseSystemController
                         'conversation_token' => $conversationToken,
                         'alphasky_key' => $alphaskyKey,
                         'domain' => $requestDomain,
+                        'public_theme' => json_encode(\Alphasky\Base\Supports\WebsiteDesign\ThemeStructure::inventory()),
                     ],
                 ]);
 
