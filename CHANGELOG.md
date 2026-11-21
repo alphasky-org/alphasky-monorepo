@@ -1,5 +1,9 @@
 ## 1.11.0 — 2026-11-17
 
+## 1.13.0
+
+- Discover registered admin index and create screens, and the visual editor for the actual homepage, for contextual help.
+
 ## 1.12.1
 
 - Share registered admin edit routes with the site assistant for navigation help.

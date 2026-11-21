@@ -17,6 +17,18 @@ final class DesignSiteClient {
     if(\Illuminate\Support\Facades\Route::has($route))$links[$key]=route($route,[],false);
    }
    if(\Illuminate\Support\Facades\Route::has('pages.edit'))foreach($data['site_context']['pages'] as $page)$links['page_'.$page['id']]=route('pages.edit',$page['id'],false);
+   $routes=\Illuminate\Support\Facades\Route::getRoutes();
+   $prefix=trim(\Alphasky\Base\Facades\BaseHelper::getAdminPrefix(),'/').'/';
+   foreach($routes as $route){
+    $name=$route->getName();
+    if(!is_string($name)||!str_starts_with($route->uri(),$prefix)||!in_array('GET',$route->methods(),true)||$route->parameterNames())continue;
+    if(!preg_match('/^(?:[a-z0-9_-]+\.)+(?:index|create|settings)$/D',$name))continue;
+    $links['screen.'. $name]=route($name,[],false);
+   }
+   foreach($data['site_context']['pages'] as $page){
+    if($page['homepage'] && \Illuminate\Support\Facades\Route::has('pages.visual-builder') && setting('enable_page_visual_builder',true))
+      $links['home_builder']=route('pages.visual-builder',$page['id'],false);
+   }
    $data['site_context']['settings']['admin_links']=$links;
   }
   $r=$this->http()->post(rtrim($this->connection['server'],'/').'/api/v1/website-design',array_merge($data,['domain'=>$this->connection['domain'],'alphasky_key'=>$this->connection['token']]));
