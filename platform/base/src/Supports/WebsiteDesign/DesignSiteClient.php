@@ -11,7 +11,7 @@ final class DesignSiteClient {
  }
  private function http(){return Http::connectTimeout(15)->timeout(1200)->withoutRedirecting()->withHeaders(['X-API-KEY'=>$this->connection['gateway'],'X-Design-Admission'=>$this->connection['admission']??'','X-Design-Time'=>$this->connection['admission_time']??''])->acceptJson();}
  public function request(array $data):array {
-  if(($data['action']??'')==='chat'){$data['site_context']=(new DesignUiBlocks())->inventory();$data['site_context']['settings']=(new DesignSettings())->inventory();$data['site_context']['settings']['site_languages']=SiteLanguages::inventory();
+  if(($data['action']??'')==='chat'){$data['site_context']=(new DesignUiBlocks())->inventory();$data['site_context']['settings']=(new DesignSettings())->inventory();$data['site_context']['settings']['public_theme']=ThemeStructure::inventory();$data['site_context']['settings']['site_languages']=SiteLanguages::inventory();
    $links=[];
    foreach(['copyright'=>'theme.options','widgets'=>'widgets.index','menus'=>'menus.index','pages'=>'pages.index'] as $key=>$route){
     if(\Illuminate\Support\Facades\Route::has($route))$links[$key]=route($route,[],false);
@@ -55,6 +55,7 @@ final class DesignSiteClient {
    if(isset($result['homepage_verification']['revision']))$url.='?runure_design_revision='.rawurlencode($result['homepage_verification']['revision']);
    $check=Http::connectTimeout(10)->timeout(30)->withoutRedirecting()->withHeaders(['Cache-Control'=>'no-cache'])->get($url);
    if(!$check->successful()||(!empty($result['homepage_shortcode'])&&!str_contains($check->body(),'data-design-home')))throw new RuntimeException('site_verification_failed');
+   if(($result['role']??'')==='public_theme'&&!str_contains($check->body(),'/'.$result['module_name'].'/design.css'))throw new RuntimeException('site_verification_failed');
    if(!empty($result['homepage_shortcode']))$this->verifyHomepage($check->body(),$result['homepage_verification']??null);
    return $this->request(['action'=>'report','operation_id'=>$operation['id'],'success'=>true]);
   }catch(\Throwable $e){report($e);return $this->request(['action'=>'report','operation_id'=>$operation['id'],'success'=>false]);}
@@ -104,7 +105,8 @@ final class DesignSiteClient {
   foreach([base_path('platform'),base_path('platform/plugins')]as$directory){if(is_link($directory))throw new RuntimeException('unsafe_plugin_directory');if(!is_dir($directory)&&!mkdir($directory,0755))throw new RuntimeException('plugin_directory_unavailable');}
  }
  public function install(string $module,array $package):void {
-  if(!preg_match('/^design_[a-f0-9]{12}_[a-z][a-z0-9_]{0,39}$/D',$module)||!preg_match('/^[a-f0-9]{64}$/D',$package['sha256']??'')||!preg_match('#^/api/v1/plugin-package/[0-9]+\?[^\r\n]+$#D',$package['path']??''))throw new RuntimeException('invalid_release');
+  $themePackage = ($package['presentation_only'] ?? null) === true && preg_match('/^site_design_[a-f0-9]{20}$/D', $module);
+  if((!$themePackage && !preg_match('/^design_[a-f0-9]{12}_[a-z][a-z0-9_]{0,39}$/D',$module))||!preg_match('/^[a-f0-9]{64}$/D',$package['sha256']??'')||!preg_match('#^/api/v1/plugin-package/[0-9]+\?[^\r\n]+$#D',$package['path']??''))throw new RuntimeException('invalid_release');
   $root=storage_path('app/private/website-design');if(!is_dir($root))mkdir($root,0700,true);
   $lock=fopen($root.'/install.lock','c');if(!$lock||!flock($lock,LOCK_EX))throw new RuntimeException('install_locked');
   try{

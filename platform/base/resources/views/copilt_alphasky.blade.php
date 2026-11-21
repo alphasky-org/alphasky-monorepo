@@ -538,6 +538,14 @@
         }
 
         async function postEventStream(url, payload, onMessage) {
+            const form = new FormData();
+            for (const [key,value] of Object.entries(payload)) form.append(key,value);
+            const provider = document.getElementById('copilot-provider').value;
+            if (provider) {
+                form.append('provider', provider);
+                form.append('level', document.getElementById('copilot-level').value);
+            }
+            for (const file of attachedFiles) form.append('attachments[]',file);
             const abortController = new AbortController();
             activeEventSource = {
                 close: () => abortController.abort(),
@@ -547,10 +555,9 @@
                 method: 'POST',
                 headers: {
                     Accept: 'text/event-stream',
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken(),
                 },
-                body: JSON.stringify(payload),
+                body: form,
                 signal: abortController.signal,
             });
 
@@ -957,7 +964,7 @@
             const text = ui.input.value.trim();
             const conversationSelect = document.getElementById('ai-copilot-menu');
 
-            if (text === '' && attachedFiles.length === 0) {
+            if (text === '') {
                 return;
             }
 
@@ -1359,6 +1366,16 @@
     <div id="ai-copilot-panel-footer">
         <div id="ai-copilot-attachments-preview"></div>
         <div id="ai-copilot-token-balance" style="font-size:12px; font-weight:700; color:#374151; padding:0 2px 6px;">Tokens: 0</div>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+            <label>{{ __('AI provider') }} <select class="form-select form-select-sm" id="copilot-provider">
+                <option value="">{{ __('Default') }}</option><option value="openai">ChatGPT</option><option value="gemini">Gemini</option><option value="deepseek">DeepSeek</option>
+            </select></label>
+            <label>{{ __('AI strength') }} <select class="form-select form-select-sm" id="copilot-level">
+                @foreach (['low','medium','high','extra'] as $level)
+                    <option value="{{ $level }}" @selected($level === 'medium')>{{ __(ucfirst($level)) }}</option>
+                @endforeach
+            </select></label>
+        </div>
         <div class="ai-copilot-input-container">
             <textarea id="ai-copilot-input" placeholder="Type a message... (Shift+Enter for new line)" rows="1"></textarea>
             <div class="ai-copilot-input-buttons">
@@ -1367,7 +1384,7 @@
                 <button id="ai-copilot-send-button" title="Send"><i class="fa fa-paper-plane"></i></button>
             </div>
         </div>
-        <input type="file" id="ai-copilot-file-input" multiple style="display: none;" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt">
+        <input type="file" id="ai-copilot-file-input" multiple style="display: none;" accept=".doc,.docx,.txt">
     </div>
 </div>
 @endif

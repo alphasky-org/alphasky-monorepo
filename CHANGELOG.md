@@ -1,3 +1,7 @@
+## 1.15.0
+
+Share public theme inventory with the website workflow and send selected AI profile and reference documents from Copilot.
+
 ## 1.14.2
 
 - Identify structural elements in published pages so redesigns can target actual page content.

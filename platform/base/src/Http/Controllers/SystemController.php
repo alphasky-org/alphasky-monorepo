@@ -131,8 +131,23 @@ class SystemController extends BaseSystemController
         $requestDomain = $this->siteAlphaskyDomain($request);
         $upstreamBaseUrl = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
         $upstreamUrl = $upstreamBaseUrl . '/api/v1/prompt';
+        $options = $request->validate([
+            'provider'=>'nullable|in:gemini,openai,deepseek','level'=>'required_with:provider|in:low,medium,high,extra',
+            'attachments'=>'sometimes|array|max:4', 'attachments.*'=>'required|file|max:8192|extensions:doc,docx,txt',
+        ]);
+        $references = [];
+        $length = 0;
+        foreach ($request->file('attachments', []) as $file) {
+            $text = (new \Alphasky\Base\Supports\WebsiteDesign\ReferenceText())->extract($file->getRealPath(), strtolower($file->getClientOriginalExtension()));
+            $length += mb_strlen($text);
+            abort_if($length > 80000, 422, 'Reference documents exceed the text limit');
+            $references[] = ['name'=>$file->getClientOriginalName(),'text'=>$text];
+        }
+        $modelOptions = empty($options['provider']) ? [] : array_intersect_key($options, array_flip(['provider','level']));
+        if ($references) $modelOptions['reference_documents'] = $references;
+
         
-        return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($userInput, $menuKey, $conversationToken, $surveysId, $alphaskyKey, $requestDomain, $upstreamBaseUrl, $upstreamUrl) {
+        return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($userInput, $menuKey, $conversationToken, $surveysId, $alphaskyKey, $requestDomain, $upstreamBaseUrl, $upstreamUrl, $modelOptions) {
             echo ": alphasky-client-stream-open\n\n";
 
             if (ob_get_level() > 0) {
@@ -180,7 +195,7 @@ class SystemController extends BaseSystemController
                         'alphasky_key' => $alphaskyKey,
                         'domain' => $requestDomain,
                         'public_theme' => json_encode(\Alphasky\Base\Supports\WebsiteDesign\ThemeStructure::inventory()),
-                    ],
+                    ] + $modelOptions,
                 ]);
 
                 if (! $upstreamResponse->successful()) {
