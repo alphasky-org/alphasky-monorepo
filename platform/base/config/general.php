@@ -9,6 +9,9 @@ return [
     ],
     'website_design' => [
         'activation_token' => env('ALPHASKY_SITE_TOKEN'),
+        'server_url' => env('SERVER_ALPHASKY_URL', ''),
+        'api_key' => env('ALPHASKY_API_KEY', ''),
+        'runure_balance_url' => env('RUNURE_SITE_BALANCE_URL', ''),
     ],
     'admin_dir' => env('ADMIN_DIR', 'admin'),
     'disable_front_theme' => env('CMS_DISABLE_FRONT_THEME', false),

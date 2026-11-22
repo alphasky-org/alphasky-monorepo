@@ -88,6 +88,15 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const i18n = {
+            tokens_site: @json(__('core/base::system.alphasky_copilot.tokens_site')),
+            tokens_alphasky: @json(__('core/base::system.alphasky_copilot.tokens_alphasky')),
+            tokens_runure: @json(__('core/base::system.alphasky_copilot.tokens_runure')),
+            tokens_unavailable: @json(__('core/base::system.alphasky_copilot.tokens_unavailable')),
+            tokens_loading: @json(__('core/base::system.alphasky_copilot.tokens_loading')),
+            development_requests: @json(__('core/base::system.alphasky_copilot.development_requests')),
+            development_hint: @json(__('core/base::system.alphasky_copilot.development_hint')),
+            development_empty: @json(__('core/base::system.alphasky_copilot.development_empty')),
+            development_error: @json(__('core/base::system.alphasky_copilot.development_error')),
             activationTitle: @json(__('core/base::system.alphasky_copilot.activation_title')),
             activationRequired: @json(__('core/base::system.alphasky_copilot.activation_required')),
             activationPlaceholder: @json(__('core/base::system.alphasky_copilot.activation_placeholder')),
@@ -388,10 +397,33 @@
             return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         }
 
-        function updateTokenBalance(tokenCount) {
-            const normalizedTokenCount = Number(tokenCount || 0);
-            localStorage.setItem('alphaskyTokenCount', String(Math.max(0, normalizedTokenCount)));
-            ui.tokenBalance.textContent = `Tokens: ${Math.max(0, normalizedTokenCount).toLocaleString()}`;
+        let balanceRevision = 0;
+        async function fetchBalance(key) {
+            const response = await postJson('{{ route('system.alphasky-balance') }}', { alphasky_key: key });
+            if (!response.ok) {
+                const error = new Error(i18n.tokens_unavailable);
+                error.status = response.status;
+                throw error;
+            }
+            return (await response.json()).data;
+        }
+
+        function displayBalance(balance) {
+            const labels = { site_key: i18n.tokens_site, runure_wallet: i18n.tokens_runure, alphasky_wallet: i18n.tokens_alphasky };
+            ui.tokenBalance.textContent = balance && labels[balance.source] && Number.isSafeInteger(balance.tokens)
+                ? labels[balance.source].replace(':count', balance.tokens.toLocaleString(document.documentElement.lang || undefined))
+                : i18n.tokens_unavailable;
+        }
+
+        async function refreshBalance() {
+            if (!isActivated()) return;
+            const revision = ++balanceRevision;
+            try {
+                const balance = await fetchBalance(serverActivation ? '' : localStorage.getItem('alphaskyKey'));
+                if (revision === balanceRevision) displayBalance(balance);
+            } catch {
+                if (revision === balanceRevision) displayBalance(null);
+            }
         }
 
         function setTaskRunning(running) {
@@ -446,7 +478,8 @@
 
             localStorage.removeItem('activateAlphasky');
             localStorage.removeItem('alphaskyKey');
-            localStorage.removeItem('alphaskyTokenCount');
+            ++balanceRevision;
+            ui.tokenBalance.textContent = i18n.tokens_loading;
             activeConversationToken = '';
             activeConversationSurveyId = 0;
             setTaskRunning(false);
@@ -517,13 +550,31 @@
             }
         }
         async function loadCapabilityRequests() {
-            if (!isAlphaskyActivatedForCapabilities()) return;
-            try { const rows=await capabilityAction('list'); rows.forEach(renderCapability); } catch(e) { console.warn('Capability requests unavailable'); }
+            if (!isActivated()) return;
+            requestsButton.disabled = true;
+            requestFeedback.textContent = '';
+            try {
+                const rows = await capabilityAction('list');
+                if (!Array.isArray(rows)) throw new Error();
+                rows.forEach(renderCapability);
+                if (rows.length) ui.chatBody.scrollTop = ui.chatBody.scrollHeight;
+                else requestFeedback.textContent = i18n.development_empty;
+            } catch {
+                requestFeedback.textContent = i18n.development_error;
+            } finally {
+                requestsButton.disabled = false;
+            }
         }
-        function isAlphaskyActivatedForCapabilities() { return !!localStorage.getItem('alphaskyKey'); }
-        // Requests persist independently of a streaming conversation or browser session.
-        const requestsButton=document.createElement('button'); requestsButton.type='button'; requestsButton.className='btn btn-sm btn-outline-secondary m-2'; requestsButton.textContent='طلبات تطوير الإضافات';
-        requestsButton.onclick=loadCapabilityRequests; ui.chatBody.parentElement.appendChild(requestsButton);
+        const requestsButton = document.createElement('button');
+        requestsButton.type = 'button';
+        requestsButton.className = 'btn btn-sm btn-outline-secondary m-2';
+        requestsButton.textContent = i18n.development_requests;
+        requestsButton.title = i18n.development_hint;
+        requestsButton.onclick = loadCapabilityRequests;
+        const requestFeedback = document.createElement('div');
+        requestFeedback.className = 'text-center small';
+        requestFeedback.setAttribute('role', 'status');
+        ui.panel.append(requestsButton, requestFeedback);
 
         function postJson(url, payload) {
             return fetch(url, {
@@ -877,32 +928,10 @@
             ui.activationStatus.textContent = '';
         }
         async function requestActivation(key) {
-            const response = await fetch(`{{ rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/') . '/api/v1/activatekey' }}?key=${encodeURIComponent(key)}`, {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'X-API-KEY': 'Seec0aw0MUAB4ITMf6N1gp2TIEdhOXw6',
-                },
-            });
-
-            const result = await response.json();
-
-            if (!response.ok || result.error) {
-                throw new Error(result.message || i18n.activationFailed);
-            }
-
-            const activatedValue = String(result?.data?.activateAlphasky ?? '');
-            const returnedKey = String(result?.data?.alphaskyKey ?? '').trim();
-
-            if (activatedValue !== '1' || !returnedKey) {
-                throw new Error(i18n.invalidServerData);
-            }
-
-            localStorage.setItem('activateAlphasky', activatedValue);
-            localStorage.setItem('alphaskyKey', returnedKey);
-            updateTokenBalance(result?.data?.token_count || 0);
-
-            return result;
+            const balance = await fetchBalance(key);
+            localStorage.setItem('activateAlphasky', '1');
+            localStorage.setItem('alphaskyKey', key);
+            displayBalance(balance);
         }
 
         async function verifyStoredActivation() {
@@ -917,6 +946,10 @@
                 await requestActivation(storedKey);
                 return true;
             } catch (error) {
+                if (error.status !== 403) {
+                    displayBalance(null);
+                    return true;
+                }
                 localStorage.removeItem('activateAlphasky');
                 localStorage.removeItem('alphaskyKey');
                 return false;
@@ -1008,10 +1041,6 @@
                 const handleStreamMessage = (data) => {
             if (data.type === 'capability_request') { renderCapability(data); return; }
 
-                    if (data.token_count !== undefined) {
-                        updateTokenBalance(data.token_count);
-                    }
-
                     if (data.type === 'token_usage') {
                         return;
                     }
@@ -1093,6 +1122,7 @@
                 clearWorkingMessage();
                 activeEventSource = null;
                 setTaskRunning(false);
+                refreshBalance();
                 loadConversations(activeConversationToken).catch(console.error);
             }
 
@@ -1231,7 +1261,10 @@
             }, 300);
         }
 
-        ui.toggleButton.addEventListener('click', () => show(ui.panel));
+        ui.toggleButton.addEventListener('click', () => {
+            show(ui.panel);
+            refreshBalance();
+        });
         ui.closeButton.addEventListener('click', () => hide(ui.panel));
         ui.sendButton.addEventListener('click', sendMessage);
         document.getElementById('ai-copilot-new-conversation-button').addEventListener('click', startNewConversation);
@@ -1311,7 +1344,7 @@
 
             if (verified) {
                 hideActivationOverlay();
-                updateTokenBalance(localStorage.getItem('alphaskyTokenCount') || 0);
+                if (serverActivation && ui.panel.classList.contains('open')) refreshBalance();
             } else {
                 showActivationOverlay();
                 ui.activationStatus.textContent = i18n.activationFailed;
@@ -1365,7 +1398,7 @@
 
     <div id="ai-copilot-panel-footer">
         <div id="ai-copilot-attachments-preview"></div>
-        <div id="ai-copilot-token-balance" style="font-size:12px; font-weight:700; color:#374151; padding:0 2px 6px;">Tokens: 0</div>
+        <div id="ai-copilot-token-balance" style="font-size:12px; font-weight:700; color:#374151; padding:0 2px 6px;" role="status">{{ __('core/base::system.alphasky_copilot.tokens_loading') }}</div>
         <div class="d-flex flex-wrap gap-2 mb-2">
             <label>{{ __('AI provider') }} <select class="form-select form-select-sm" id="copilot-provider">
                 <option value="">{{ __('Default') }}</option><option value="openai">ChatGPT</option><option value="gemini">Gemini</option><option value="deepseek">DeepSeek</option>

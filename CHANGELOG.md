@@ -1,3 +1,8 @@
+## 1.15.1
+
+- Refresh Copilot credit from the site’s billing source on opening and after use. Show wallet estimates, loading and connection failures distinctly.
+- Make plugin development request tracking available with server-side activation and provide localized empty and error states.
+
 ## 1.15.0
 
 Share public theme inventory with the website workflow and send selected AI profile and reference documents from Copilot.

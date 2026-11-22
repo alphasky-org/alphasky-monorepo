@@ -24,3 +24,9 @@ All calls, including planning, refinement, JSON repair and generation, belong to
 `DesignPublisher` publishes a generated frontend shortcode as the homepage and applies validated hex colors and re-encoded PNG/JPEG/WebP logos. The previous homepage ID and module files are retained. An interrupted install requires reconciliation; SQL migrations are not claimed to be automatically reversible.
 
 The client requires `/api/v1/website-design` on the configured central server and does not substitute for that service. `SiteConnection` keeps its existing restricted activation/library contract.
+
+## Copilot credit and development requests
+
+The authorized Copilot administrator opens the assistant from the site's dashboard. Opening it and completing a request refresh the read-only credit indicator. An independent activation key shows exact remaining units. Developer and Runure wallets show an approximate token equivalent using the wallet owner's configured conversion rate. Model-specific billing still uses actual usage. “Track plugin development requests” lists requests that required additional development for this site. Opening the list does not spend credit.
+
+The admin POST route is named `system.alphasky-balance`. The site derives the domain from its own application URL. Standalone sites need their AlphaSky gateway and a generator supporting `balance_only` on `activatekey`. Runure-managed sites use the authenticated Runure website design balance endpoint. Configure `RUNURE_SITE_BALANCE_URL` for a custom deployment. Sites already provisioned with the standard managed mail URL reuse its trusted origin. The browser receives only the source and count. A failed lookup has its own state and can be retried by reopening the panel.

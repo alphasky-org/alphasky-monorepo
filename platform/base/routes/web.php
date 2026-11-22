@@ -77,6 +77,12 @@ Route::group(['namespace' => 'Alphasky\Base\Http\Controllers'], function (): voi
             'permission' => 'superuser',
         ]);
 
+        Route::post('system/alphasky-balance', [
+            'as' => 'system.alphasky-balance',
+            'uses' => 'SystemController@postAlphaskyBalance',
+            'permission' => 'superuser',
+        ]);
+
         Route::post('system/alphasky-library', ['as'=>'system.alphasky-library', 'uses'=>'SystemController@postAlphaskyLibrary', 'permission'=>'superuser']);
 
         Route::post('system/alphasky-install-plugin', [

@@ -96,6 +96,15 @@ class SystemController extends BaseSystemController
     }
 
 
+    public function postAlphaskyBalance(Request $request, \Alphasky\Base\Supports\WebsiteDesign\CopilotBalance $balance)
+    {
+        abort_unless(config('core.base.general.copilot.enabled') && $request->user()?->isSuperUser()
+            && (int) config('core.base.general.copilot.user_id') === (int) $request->user()->getKey(), 403);
+        $request->validate(['alphasky_key' => 'nullable|string|max:500']);
+        return response()->json(['data' => $balance->read($this->siteAlphaskyKey($request))])
+            ->header('Cache-Control', 'private, no-store');
+    }
+
     public function postAlphaskyLibrary(Request $request)
     {
         $request->merge(['alphasky_key' => $this->siteAlphaskyKey($request)]);
@@ -105,9 +114,9 @@ class SystemController extends BaseSystemController
             'quote_id'=>'nullable|uuid', 'query'=>'nullable|string|max:2000',
         ]);
         $data['domain'] = $this->siteAlphaskyDomain($request);
-        $base = rtrim((string) config('alphasky.server_url', env('SERVER_ALPHASKY_URL', '')), '/');
+        $base = rtrim((string) (config('alphasky.server_url') ?: config('core.base.general.website_design.server_url')), '/');
         try {
-            $upstream = \Illuminate\Support\Facades\Http::timeout(30)->withHeaders(['X-API-KEY'=>config('alphasky.api_key', env('ALPHASKY_API_KEY', ''))])->acceptJson()->post($base.'/api/v1/plugin-library', $data);
+            $upstream = \Illuminate\Support\Facades\Http::timeout(30)->withHeaders(['X-API-KEY'=>config('alphasky.api_key') ?: config('core.base.general.website_design.api_key')])->acceptJson()->post($base.'/api/v1/plugin-library', $data);
             return response()->json($upstream->json() ?? ['error'=>'Invalid server response.'], $upstream->status());
         } catch (\Throwable $e) {
             return response()->json(['error'=>'تعذر الاتصال بألفاسكاي. حاول مجددًا.'], 502);
