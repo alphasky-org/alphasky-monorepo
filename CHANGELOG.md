@@ -1,3 +1,7 @@
+## 1.16.0
+
+- Describe public Blade bindings and the active Theme Options field registry to the design generator. Supply option identifiers, field types and sections without transmitting source or saved values.
+
 ## 1.15.1
 
 - Refresh Copilot credit from the site’s billing source on opening and after use. Show wallet estimates, loading and connection failures distinctly.

@@ -3,6 +3,8 @@ namespace Alphasky\Base\Supports\WebsiteDesign;
 
 use Alphasky\Theme\Facades\Theme;
 use Illuminate\Support\Facades\File;
+use Alphasky\Theme\Events\RenderingThemeOptionSettings;
+use Alphasky\Theme\Facades\ThemeOption;
 
 final class ThemeStructure
 {
@@ -12,12 +14,17 @@ final class ThemeStructure
         $name = Theme::getThemeName();
         $root = realpath(theme_path($name));
         $views = [];
+        $bindings = [];
         if (!$root || !preg_match('/^[a-z0-9_-]+$/iD', $name)) return [];
         foreach (File::allFiles($root) as $file) {
             $path = $file->getRelativePathname();
-            if (!preg_match('~^(partials|views|layouts)/[\w/.-]+\.blade\.php$~D', $path)
+            $widget = preg_match('~^widgets/[\w-]+/templates/frontend\.blade\.php$~D', $path);
+            if ((!$widget && !preg_match('~^(partials|views|layouts)/(?:[\w-]+/)*[\w-]+\.blade\.php$~D', $path))
                 || !str_starts_with((string) $file->getRealPath(), $root.DIRECTORY_SEPARATOR) || $file->getSize() > 200000) continue;
-            $markup = preg_replace('/\{\{.*?\}\}|\{!!.*?!!\}|<\?.*?\?>/s', '', $file->getContents());
+            $source = preg_replace('~\{\{--.*?--\}\}|<!--.*?-->~s', '', $file->getContents());
+            $bindings[$path] = self::bindings($source);
+            if ($widget) continue;
+            $markup = preg_replace('/\{\{.*?\}\}|\{!!.*?!!\}|<\?.*?\?>/s', '', $source);
             preg_match_all('~<(header|footer|nav|section|article|div|main|ul|h[1-6]|p|aside|button|summary|details|a)\b[^<>]*?\bclass=["\']([^"\']*)["\']~i', $markup, $matches, PREG_SET_ORDER);
             $selectors = [];
             foreach ($matches as $m) {
@@ -26,7 +33,7 @@ final class ThemeStructure
                 }
             }
             $views[$path] = array_slice(array_keys($selectors), 0, 70);
-            if (count($views) >= 120) break;
+
         }
         $content = [];
         if (class_exists(\Alphasky\Page\Models\Page::class) && \Illuminate\Support\Facades\Schema::hasTable('pages')) {
@@ -39,6 +46,61 @@ final class ThemeStructure
                 }
             }
         }
-        return ['theme'=>$name,'views'=>$views,'content_selectors'=>array_keys($content)];
+        return ['theme'=>$name,'views'=>$views,'content_selectors'=>array_keys($content),
+            'blade_schema'=>1, 'bindings'=>array_filter($bindings), 'theme_options'=>self::options()];
+    }
+
+    /** Describe literal public bindings; never evaluate the template or send its source. */
+    public static function bindings(string $source): array
+    {
+        $patterns = [
+            'options' => 'theme_option',
+            'partials' => 'Theme::partial',
+            'layouts' => 'Theme::layout',
+            'sidebars' => 'dynamic_sidebar',
+            'menus' => 'Menu::renderMenuLocation',
+            'plugins' => 'is_plugin_active',
+            'routes' => 'route',
+            'filters' => 'apply_filters',
+            'theme_slots' => 'Theme::(?:get|set)',
+            'includes' => '@include',
+        ];
+        $result = [];
+        foreach ($patterns as $group => $call) {
+            preg_match_all('~(?<![\w])'.$call.'\s*\(\s*(["\x27])([a-zA-Z0-9_./-]{1,120})\1\s*[,)]~', $source, $matches);
+            if ($matches[2]) $result[$group] = array_values(array_unique($matches[2]));
+        }
+        $references = [
+            'menu_views' => '~["\x27]view["\x27]\s*=>\s*["\x27]([\w./-]+)["\x27]~',
+            'widget_fields' => '~\$config\[["\x27]([\w-]+)["\x27]\]~',
+            'shortcode_attributes' => '~\$shortcode->([a-zA-Z]\w*)\b(?!\s*\()~',
+            'included_theme_views' => '~Theme::getThemeNamespace\(\)\s*\.\s*["\x27]::([\w.-]+)["\x27]~',
+        ];
+        foreach ($references as $group => $pattern) {
+            preg_match_all($pattern, $source, $matches);
+            if ($matches[1]) $result[$group] = array_values(array_unique($matches[1]));
+        }
+        preg_match_all('~\b(?:apply_filters|do_action)\s*\(\s*([A-Z][A-Z0-9_]+)\s*[,)]~', $source, $hooks);
+        if ($hooks[1]) $result['hooks'] = array_values(array_unique($hooks[1]));
+        preg_match_all('~\b(Theme|Menu|RvMedia|SeoHelper|BaseHelper|Shortcode)::([a-zA-Z]\w{0,63})\s*\(~', $source, $calls, PREG_SET_ORDER);
+        foreach ($calls as $call) $result['helpers'][] = $call[1].'::'.$call[2];
+        if (isset($result['helpers'])) $result['helpers'] = array_values(array_unique($result['helpers']));
+        return $result;
+    }
+
+    private static function options(): array
+    {
+        RenderingThemeOptionSettings::dispatch();
+        do_action(RENDERING_THEME_OPTIONS_PAGE);
+        $options = [];
+        foreach (ThemeOption::getFields()['theme'] ?? [] as $id => $field) {
+            $key = $field['attributes']['name'] ?? $id;
+            if (!is_string($key) || !preg_match('/^[\w.-]{1,128}$/D', $key)) continue;
+            $options[$key] = [
+                'type' => $field['type'] ?? 'text',
+                'section' => $field['section_id'] ?? '',
+            ];
+        }
+        return $options;
     }
 }
