@@ -186,6 +186,8 @@ return [
         'selected_answer' => 'تم اختيار: :answer',
         'executing_plugin_commands' => 'جاري تنفيذ أوامر البلغ إن...',
         'plugin_commands_failed' => 'فشل تنفيذ أوامر البلغ إن.',
+        'footer_verified' => 'تحققنا من ظهور بيانات التواصل المطلوبة في فوتر الموقع.',
+        'footer_not_verified' => 'طُبّقت الإعدادات، لكن تعذّر التأكد من ظهور بيانات التواصل في الفوتر. راجع الصفحة العامة.',
         'plugin_commands_success' => 'تم تنفيذ أوامر البلغ إن بنجاح.',
         'activate_plugin' => 'تفعيل البلغ إن',
         'update_plugin' => 'تحديث النسخة',

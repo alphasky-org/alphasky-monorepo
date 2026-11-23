@@ -46,8 +46,13 @@ final class ThemeStructure
                 }
             }
         }
+        $footer = $bindings['partials/footer.blade.php']['options'] ?? [];
+        $contact = [];
+        foreach (['address', 'phone'] as $field) {
+            $contact[$field] = ['configured' => filled(theme_option($field)), 'bound' => in_array($field, $footer, true)];
+        }
         return ['theme'=>$name,'views'=>$views,'content_selectors'=>array_keys($content),
-            'page_layouts'=>self::pageLayouts(), 'blade_schema'=>1, 'bindings'=>array_filter($bindings), 'theme_options'=>self::options()];
+            'footer_contact'=>$contact, 'page_layouts'=>self::pageLayouts(), 'blade_schema'=>1, 'bindings'=>array_filter($bindings), 'theme_options'=>self::options()];
     }
 
     /** Public page identities and current native template selections. */

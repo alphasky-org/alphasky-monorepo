@@ -50,6 +50,7 @@ final class DesignSiteClient {
    if(!empty($result['homepage_shortcode']))(new DesignPublisher())->homepage($result['module_name'],$result['homepage_shortcode'],$result['homepage_sections']??[]);
    $publication=!empty($result['page_blocks'])?$this->publishBlocks($operation['id'],$result['page_blocks']):null;
    $this->refreshPublishedContent();
+   FooterContactCheck::verify($result['module_name'] ?? '');
    if($publication)(new DesignUiBlocks())->verify($publication);
    $url=rtrim((string)config('app.url'),'/').'/';
    if(isset($result['homepage_verification']['revision']))$url.='?runure_design_revision='.rawurlencode($result['homepage_verification']['revision']);

@@ -181,6 +181,8 @@ return [
         'selected_answer' => 'Selected: :answer',
         'executing_plugin_commands' => 'Running plugin commands...',
         'plugin_commands_failed' => 'Failed to run plugin commands.',
+        'footer_verified' => 'Verified the requested contact details in the public footer.',
+        'footer_not_verified' => 'Settings were applied, but the contact details could not be verified in the public footer. Check the public page.',
         'plugin_commands_success' => 'Plugin commands ran successfully.',
         'activate_plugin' => 'Activate plugin',
         'update_plugin' => 'Update version',

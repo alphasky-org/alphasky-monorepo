@@ -1,3 +1,7 @@
+## 1.18.1
+
+- Keep complete dictated Copilot drafts across pauses and microphone sessions. Report which footer contact fields are configured and verify published contact changes before reporting success.
+
 ## 1.18.0
 
 - Share the active theme’s selectable page templates and current public page assignments with Copilot. Preserve the selected homepage template on later content edits.

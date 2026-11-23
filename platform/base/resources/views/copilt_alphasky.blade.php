@@ -166,34 +166,14 @@
 
         let attachedFiles = [];
         let isResizing = false;
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
-        let isRecording = false;
         let activeEventSource = null;
         let isTaskRunning = false;
         let activeConversationToken = '';
         let activeConversationSurveyId = 0;
         let activeWorkingMessage = null;
 
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.onresult = (event) => {
-                let interimTranscript = '';
-                let finalTranscript = '';
-
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
-                }
-
-                ui.input.value = finalTranscript + interimTranscript;
-            };
-        }
+        @include('core/base::partials.copilot-dictation')
+        const cancelDictation = bindCopilotDictation(ui.input, ui.micButton, () => alert(i18n.speechNotSupported));
 
         const serverActivation = @json((bool) config('core.base.general.website_design.activation_token'));
 
@@ -455,6 +435,7 @@
         }
 
         function startNewConversation() {
+            cancelDictation();
             const conversationSelect = document.getElementById('ai-copilot-menu');
 
             if (activeEventSource) {
@@ -471,6 +452,7 @@
         }
 
         function logoutAlphaskyCopilot() {
+            cancelDictation();
             if (activeEventSource) {
                 activeEventSource.close();
                 activeEventSource = null;
@@ -686,7 +668,9 @@
             }
 
             addMessage(installResult.message || i18n.pluginInstalled, 'bot');
-            if (data.presentation_only === true && /^site_design_[a-f0-9]{20}$/.test(data.module_name) && installResult.module_name === data.module_name) {
+            const applyDesign = data.presentation_only === true && /^site_design_[a-f0-9]{20}$/.test(data.module_name);
+            const applyContact = data.footer_contact === true && /^design_[a-f0-9]{12}_widgets_[a-f0-9]{12}$/.test(data.module_name);
+            if ((applyDesign || applyContact) && installResult.module_name === data.module_name) {
                 await applyInstalledPackage(installResult.module_name);
                 return;
             }
@@ -995,16 +979,12 @@
             }
 
             const text = ui.input.value.trim();
-            const conversationSelect = document.getElementById('ai-copilot-menu');
 
             if (text === '') {
                 return;
             }
 
-            if (conversationSelect.value === '__new__') {
-                activeConversationToken = '';
-                activeConversationSurveyId = 0;
-            }
+            cancelDictation();
 
             setTaskRunning(true);
 
@@ -1038,6 +1018,7 @@
             };
 
             try {
+                let contactPublication;
                 const handleStreamMessage = (data) => {
             if (data.type === 'capability_request') { renderCapability(data); return; }
 
@@ -1061,10 +1042,11 @@
                     }
 
                     if (data.type === 'plugin_package') {
-                        handlePluginPackage(data).catch((error) => {
+                        const publication = handlePluginPackage(data).catch((error) => {
                             console.error('Failed to install plugin package:', error);
                             addMessage(error.message || i18n.pluginPackagePullFailed, 'bot');
                         });
+                        if (data.footer_contact === true) contactPublication = publication;
                         return;
                     }
 
@@ -1110,6 +1092,7 @@
                     alphasky_key: (localStorage.getItem('alphaskyKey') || '').trim(),
                     domain: window.location.hostname,
                 }, handleStreamMessage);
+                await contactPublication;
             } catch (error) {
                 if (error.name === 'AbortError') {
                     return;
@@ -1172,6 +1155,7 @@
         }
 
         async function loadConversationMessages(token) {
+            cancelDictation();
             if (!token) {
                 ui.chatBody.innerHTML = '';
                 activeConversationToken = '';
@@ -1230,23 +1214,6 @@
             });
         }
 
-        function toggleVoiceRecognition() {
-            if (!recognition) {
-                alert(i18n.speechNotSupported);
-                return;
-            }
-
-            if (isRecording) {
-                recognition.stop();
-                ui.micButton.classList.remove('recording');
-            } else {
-                recognition.start();
-                ui.micButton.classList.add('recording');
-            }
-
-            isRecording = !isRecording;
-        }
-
         function show(element) {
             element.style.display = 'flex';
             setTimeout(() => {
@@ -1265,7 +1232,7 @@
             show(ui.panel);
             refreshBalance();
         });
-        ui.closeButton.addEventListener('click', () => hide(ui.panel));
+        ui.closeButton.addEventListener('click', () => { cancelDictation(); hide(ui.panel); });
         ui.sendButton.addEventListener('click', sendMessage);
         document.getElementById('ai-copilot-new-conversation-button').addEventListener('click', startNewConversation);
         document.getElementById('ai-copilot-logout-button').addEventListener('click', logoutAlphaskyCopilot);
@@ -1283,7 +1250,6 @@
         });
 
         ui.attachButton.addEventListener('click', () => ui.fileInput.click());
-        ui.micButton.addEventListener('click', toggleVoiceRecognition);
 
         ui.fileInput.addEventListener('change', (e) => {
             attachedFiles.push(...e.target.files);
@@ -1413,7 +1379,7 @@
             <textarea id="ai-copilot-input" placeholder="Type a message... (Shift+Enter for new line)" rows="1"></textarea>
             <div class="ai-copilot-input-buttons">
                 <button id="ai-copilot-attach-button" title="Attach File"><i class="fa fa-paperclip"></i></button>
-                <button id="ai-copilot-mic-button" title="Record Voice"><i class="fa fa-microphone"></i></button>
+                <button id="ai-copilot-mic-button" aria-pressed="false" title="Record Voice"><i class="fa fa-microphone"></i></button>
                 <button id="ai-copilot-send-button" title="Send"><i class="fa fa-paper-plane"></i></button>
             </div>
         </div>

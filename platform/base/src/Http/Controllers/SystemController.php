@@ -516,8 +516,15 @@ class SystemController extends BaseSystemController
             $commands['php artisan migrate --force --path=' . $migrationPath] = __('core/base::system.alphasky_copilot.no_plugin_migrations');
         }
 
+        try {
+            $footerVerified = \Alphasky\Base\Supports\WebsiteDesign\FooterContactCheck::verify($moduleName);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['error'=>'footer_not_verified', 'message'=>__('core/base::system.alphasky_copilot.footer_not_verified')], 422);
+        }
+
         return response()->json([
-            'message' => __('core/base::system.alphasky_copilot.plugin_commands_success'),
+            'message' => __($footerVerified ? 'core/base::system.alphasky_copilot.footer_verified' : 'core/base::system.alphasky_copilot.plugin_commands_success'),
             'module_name' => $moduleName,
             'commands' => $commands,
         ]);
