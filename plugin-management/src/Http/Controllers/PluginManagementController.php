@@ -64,6 +64,9 @@ class PluginManagementController extends BaseController
 
                 if (! empty($manifest)) {
                     $manifest = [
+                        'description' => '',
+                        'author' => '',
+                        'version' => '',
                         ...$manifest,
                         'status' => in_array($path, $installed),
                         'path' => $path,

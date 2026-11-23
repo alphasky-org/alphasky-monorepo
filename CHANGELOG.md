@@ -1,3 +1,7 @@
+## 1.16.1
+
+- Fix the Installed Plugins page for packages that omit their optional description, author or version.
+
 ## 1.16.0
 
 - Describe public Blade bindings and the active Theme Options field registry to the design generator. Supply option identifiers, field types and sections without transmitting source or saved values.
