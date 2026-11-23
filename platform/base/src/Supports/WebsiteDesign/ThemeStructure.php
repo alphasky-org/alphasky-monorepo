@@ -47,7 +47,24 @@ final class ThemeStructure
             }
         }
         return ['theme'=>$name,'views'=>$views,'content_selectors'=>array_keys($content),
-            'blade_schema'=>1, 'bindings'=>array_filter($bindings), 'theme_options'=>self::options()];
+            'page_layouts'=>self::pageLayouts(), 'blade_schema'=>1, 'bindings'=>array_filter($bindings), 'theme_options'=>self::options()];
+    }
+
+    /** Public page identities and current native template selections. */
+    private static function pageLayouts(): array
+    {
+        if (!class_exists(\Alphasky\Page\Models\Page::class) || !\Illuminate\Support\Facades\Schema::hasTable('pages')) return [];
+        $home = (int) \Alphasky\Base\Facades\BaseHelper::getHomepageId();
+        $templates = \Alphasky\Page\Supports\Template::getPageTemplates();
+        $pages = \Alphasky\Page\Models\Page::query()->wherePublished()
+            ->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [$home])->orderBy('id')
+            ->limit(200)->get(['id','name','template']);
+        $slugs = \Alphasky\Slug\Models\Slug::where('reference_type',\Alphasky\Page\Models\Page::class)
+            ->whereIn('reference_id',$pages->modelKeys())->pluck('key','reference_id');
+        return ['templates'=>$templates,'pages'=>$pages->map(static fn($page)=>[
+            'id'=>(int)$page->id,'title'=>(string)$page->name,'slug'=>(string)($slugs[$page->id]??''),
+            'homepage'=>(int)$page->id===$home,'template'=>$page->template?:'default',
+        ])->all()];
     }
 
     /** Describe literal public bindings; never evaluate the template or send its source. */

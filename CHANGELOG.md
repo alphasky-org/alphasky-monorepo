@@ -1,3 +1,7 @@
+## 1.18.0
+
+- Share the active theme’s selectable page templates and current public page assignments with Copilot. Preserve the selected homepage template on later content edits.
+
 ## 1.17.1
 
 - Preserve recorded filenames when restoring a catalog plugin whose historical migrations have identical contents.

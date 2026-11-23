@@ -13,7 +13,7 @@ final class DesignPublisher {
    $current=(string)$page->getRawOriginal('content');
    $next=self::homepageContent($current,$shortcode,$sections);
    if($current!==''&&$next!==$current){$dir=storage_path('app/private/website-design/page-backups');if(!is_dir($dir))mkdir($dir,0700,true);$file=$dir.'/split-'.$page->id.'-'.hash('sha256',$current).'.json';if(!is_file($file)){file_put_contents($file,json_encode(['page_id'=>$page->id,'content'=>$current],JSON_THROW_ON_ERROR),LOCK_EX);chmod($file,0600);}}
-   $page->content=self::homepageContent($current,$shortcode,$sections);$page->template=$sections?'website-design':'no-sidebar';$page->status='published';$page->save();
+   $page->content=self::homepageContent($current,$shortcode,$sections);if(!$page->exists)$page->template=$sections?'website-design':'no-sidebar';$page->status='published';$page->save();
    if(!setting('website_design_previous_homepage'))setting()->set('website_design_previous_homepage',(string)theme_option('homepage_id',''));
    setting()->set($key,(string)$page->id)->save();
    \Alphasky\Theme\Facades\ThemeOption::setOption('homepage_id',(string)$page->id)->saveOptions();return (int)$page->id;

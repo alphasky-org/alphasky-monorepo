@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'no_sidebar_contained' => 'بدون شريط جانبي، بعرض محتوى محدود',
     'create' => 'إنشاء صفحة جديدة',
     'form' => [
         'name' => 'اسم',

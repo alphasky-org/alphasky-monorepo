@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'no_sidebar_contained' => 'No sidebar, centered content',
     'create' => 'Create new page',
     'form' => [
         'name' => 'Name',
