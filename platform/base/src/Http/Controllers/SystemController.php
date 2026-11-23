@@ -203,6 +203,8 @@ class SystemController extends BaseSystemController
                         'conversation_token' => $conversationToken,
                         'alphasky_key' => $alphaskyKey,
                         'domain' => $requestDomain,
+                        'site_languages' => \Alphasky\Base\Supports\WebsiteDesign\SiteLanguages::inventory(),
+                        'site_images' => \Alphasky\Media\Models\MediaFile::where('mime_type','like','image/%')->latest('id')->limit(60)->get(['id','name'])->mapWithKeys(fn($file)=>['media-'.$file->id=>$file->name])->all(),
                         'public_theme' => json_encode(\Alphasky\Base\Supports\WebsiteDesign\ThemeStructure::inventory()),
                     ] + $modelOptions,
                 ]);
@@ -465,6 +467,13 @@ class SystemController extends BaseSystemController
         $moduleName = basename(trim((string) $request->input('module_name')));
         $migrationPath = 'platform/plugins/' . $moduleName . '/database/migrations';
         $commands = [];
+
+        if (preg_match('/^design_[a-f0-9]{12}_pages_[a-f0-9]{10}$/D', $moduleName) && is_file(plugin_path($moduleName.'/dependencies/catalog.json'))) {
+            $result = $this->runAlphaskyArtisanCommand(['cms:design:install-dependencies', $moduleName]);
+            if (!$result['successful']) {
+                return response()->json(['error'=>'dependency_install_failed', 'message'=>$result['output']], 422);
+            }
+        }
 
         $publishResult = $this->runAlphaskyArtisanCommand(['cms:publish:assets']);
         $commands['php artisan cms:publish:assets'] = $publishResult['output'];

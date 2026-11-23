@@ -1,3 +1,7 @@
+## 1.17.0
+
+- Send enabled site languages and image choices with Copilot requests, and install verified catalog dependencies before activating generated website pages.
+
 ## 1.16.1
 
 - Fix the Installed Plugins page for packages that omit their optional description, author or version.

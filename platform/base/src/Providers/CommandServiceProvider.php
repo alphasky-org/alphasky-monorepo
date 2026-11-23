@@ -33,6 +33,7 @@ class CommandServiceProvider extends ServiceProvider
             FetchGoogleFontsCommand::class,
             ImportDatabaseCommand::class,
             InstallCommand::class,
+            \Alphasky\Base\Commands\InstallDesignDependenciesCommand::class,
             PublishAssetsCommand::class,
             GoogleFontsUpdateCommand::class,
             CompressImagesCommand::class,
