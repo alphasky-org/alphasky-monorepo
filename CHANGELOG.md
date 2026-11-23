@@ -1,3 +1,7 @@
+## 1.17.1
+
+- Preserve recorded filenames when restoring a catalog plugin whose historical migrations have identical contents.
+
 ## 1.17.0
 
 - Send enabled site languages and image choices with Copilot requests, and install verified catalog dependencies before activating generated website pages.

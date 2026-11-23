@@ -86,6 +86,19 @@ class DesignCatalogInstaller
                 if (!rename($stage, $target)) throw new RuntimeException('catalog_move_failed');
             } finally { $zip->close(); @unlink($zipPath); }
         }
+        // Use the recorded filename when restoring a byte-identical historical migration.
+        foreach ($p['migration_aliases'] ?? [] as $current=>$alias) {
+            $previous = $alias['previous'] ?? '';
+            $valid = '/^\d{4}_\d{2}_\d{2}_\d{6}_[a-z0-9_]+$/D';
+            if (!preg_match($valid,$current) || !preg_match($valid,$previous) || substr($current,17)!==substr($previous,17)) throw new RuntimeException('invalid_migration_alias');
+            $dir = $target.'/database/migrations/';
+            if (!is_file($dir.$current.'.php') || is_file($dir.$previous.'.php')) continue;
+            if (!hash_equals($alias['sha256'],hash_file('sha256',$dir.$current.'.php'))) throw new RuntimeException('migration_alias_content_changed');
+            $ledger = \Illuminate\Support\Facades\DB::table('migrations');
+            if ((clone $ledger)->where('migration',$previous)->exists() && !(clone $ledger)->where('migration',$current)->exists()) {
+                if (!rename($dir.$current.'.php',$dir.$previous.'.php')) throw new RuntimeException('migration_alias_rename_failed');
+            }
+        }
         file_put_contents($receipt, json_encode(['status'=>'applying','sha256'=>$p['sha256']]), LOCK_EX);
         // Failed migrations are never replayed automatically; retain files/receipt for reconciliation.
         $this->command(['cms:plugin:activate', $name]);
